@@ -4,67 +4,69 @@ import { useAppTheme } from "../theme";
 
 export default function HabitDetailCard({ habit, onOpenDetail, onToggle }) {
   const theme = useAppTheme();
-  const completionRate = Math.round((habit.completedCount / habit.totalCount) * 100);
+  
+  const title = habit.title || habit.name || "Untitled Habit";
+  const icon = habit.icon || "star-outline";
+  const color = habit.color || theme.colors.textPrimary;
+  const isCompleted = habit.completedToday;
+  
+  const completionRate = habit.totalCount > 0 
+    ? Math.round((habit.completedCount / habit.totalCount) * 100) 
+    : 0;
 
   return (
     <View style={[styles.card, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
-      <View style={styles.headerRow}>
-        <Text style={[styles.name, { color: theme.colors.textPrimary }]}>{habit.name}</Text>
-        <View
-          style={[
-            styles.statusPill,
-            {
-              backgroundColor: habit.completedToday ? theme.colors.textPrimary : theme.colors.surface,
-              borderColor: habit.completedToday ? theme.colors.textPrimary : theme.colors.border
-            }
-          ]}
-        >
-          <Text style={[styles.statusText, { color: habit.completedToday ? theme.colors.background : theme.colors.textSecondary }]}>
-            {habit.completedToday ? "Done" : "Pending"}
-          </Text>
+      <View style={styles.topRow}>
+        <View style={[styles.iconBox, { backgroundColor: color + "15" }]}>
+          <Ionicons name={icon} size={22} color={color} />
+        </View>
+        <View style={styles.headerInfo}>
+          <Text style={[styles.name, { color: theme.colors.textPrimary }]}>{title}</Text>
+          <Text style={[styles.freq, { color: theme.colors.textMuted }]}>{habit.frequency.toUpperCase()}</Text>
+        </View>
+        <View style={[styles.streakBadge, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+          <Ionicons name="flame" size={12} color="#ff4d4d" />
+          <Text style={[styles.streakText, { color: theme.colors.textPrimary }]}>{habit.streak}</Text>
         </View>
       </View>
 
-      <View style={styles.metaRow}>
-        <View style={styles.metaItem}>
-          <Ionicons name="repeat-outline" size={13} color={theme.colors.textMuted} />
-          <Text style={[styles.metaText, { color: theme.colors.textSecondary }]}>{habit.frequency}</Text>
+      <View style={styles.progressContainer}>
+        <View style={styles.progressLabels}>
+          <Text style={[styles.progressLabel, { color: theme.colors.textMuted }]}>OVERALL PROGRESS</Text>
+          <Text style={[styles.progressValue, { color: color }]}>{completionRate}%</Text>
         </View>
-        <View style={styles.metaItem}>
-          <Ionicons name="flame-outline" size={13} color={theme.colors.textMuted} />
-          <Text style={[styles.metaText, { color: theme.colors.textSecondary }]}>{habit.streak} days</Text>
-        </View>
-        <View style={styles.metaItem}>
-          <Ionicons name="checkmark-done-outline" size={13} color={theme.colors.textMuted} />
-          <Text style={[styles.metaText, { color: theme.colors.textSecondary }]}>
-            {habit.completedCount}/{habit.totalCount}
-          </Text>
+        <View style={[styles.track, { backgroundColor: theme.colors.surface }]}>
+          <View style={[styles.fill, { width: `${completionRate}%`, backgroundColor: color }]} />
         </View>
       </View>
 
-      <View style={styles.progressWrap}>
-        <View style={[styles.progressTrack, { backgroundColor: theme.colors.border }]}>
-          <View style={[styles.progressFill, { width: `${completionRate}%`, backgroundColor: theme.colors.textPrimary }]} />
+      <View style={styles.footer}>
+        <View style={styles.statGroup}>
+          <Text style={[styles.statNum, { color: theme.colors.textPrimary }]}>{habit.completedCount}</Text>
+          <Text style={[styles.statLabel, { color: theme.colors.textMuted }]}>DONE</Text>
         </View>
-        <Text style={[styles.progressText, { color: theme.colors.textMuted }]}>{completionRate}% completion</Text>
-      </View>
-
-      <View style={styles.actionRow}>
-        <Pressable
-          onPress={() => onOpenDetail(habit.id)}
-          style={[styles.secondaryBtn, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}
-        >
-          <Text style={[styles.secondaryText, { color: theme.colors.textPrimary }]}>Details</Text>
-        </Pressable>
-
-        <Pressable
-          onPress={() => onToggle(habit.id)}
-          style={[styles.primaryBtn, { backgroundColor: theme.colors.textPrimary }]}
-        >
-          <Text style={[styles.primaryText, { color: theme.colors.background }]}>
-            {habit.completedToday ? "Undo" : "Complete"}
-          </Text>
-        </Pressable>
+        <View style={styles.divider} />
+        <View style={styles.statGroup}>
+          <Text style={[styles.statNum, { color: theme.colors.textPrimary }]}>{habit.totalCount}</Text>
+          <Text style={[styles.statLabel, { color: theme.colors.textMuted }]}>TOTAL</Text>
+        </View>
+        
+        <View style={styles.actions}>
+          <Pressable 
+            onPress={() => onOpenDetail(habit.id)}
+            style={[styles.actionBtn, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
+          >
+            <Ionicons name="ellipsis-horizontal" size={18} color={theme.colors.textPrimary} />
+          </Pressable>
+          <Pressable 
+            onPress={() => onToggle(habit.id, !isCompleted)}
+            style={[styles.mainAction, { backgroundColor: isCompleted ? theme.colors.surface : theme.colors.textPrimary }]}
+          >
+            <Text style={[styles.mainActionText, { color: isCompleted ? theme.colors.textPrimary : theme.colors.background }]}>
+              {isCompleted ? "Undo" : "Check 🏹"}
+            </Text>
+          </Pressable>
+        </View>
       </View>
     </View>
   );
@@ -72,93 +74,126 @@ export default function HabitDetailCard({ habit, onOpenDetail, onToggle }) {
 
 const styles = StyleSheet.create({
   card: {
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 13,
-    marginBottom: 12
+    padding: 20,
+    borderRadius: 24,
+    borderWidth: 1.5,
+    marginBottom: 16,
   },
-  headerRow: {
+  topRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 10
+    marginBottom: 20,
+  },
+  iconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 14,
+  },
+  headerInfo: {
+    flex: 1,
   },
   name: {
     fontSize: 17,
-    fontWeight: "700",
-    flex: 1,
-    paddingRight: 10
+    fontWeight: "800",
+    letterSpacing: -0.5,
+    marginBottom: 2,
   },
-  statusPill: {
+  freq: {
+    fontSize: 10,
+    fontWeight: "900",
+    letterSpacing: 1,
+  },
+  streakBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
     borderWidth: 1,
-    borderRadius: 999,
-    minWidth: 72,
-    height: 28,
+    gap: 4,
+  },
+  streakText: {
+    fontSize: 12,
+    fontWeight: "800",
+  },
+  progressContainer: {
+    marginBottom: 20,
+  },
+  progressLabels: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+    marginBottom: 8,
+  },
+  progressLabel: {
+    fontSize: 10,
+    fontWeight: "900",
+    letterSpacing: 1,
+  },
+  progressValue: {
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  track: {
+    height: 6,
+    borderRadius: 3,
+    overflow: "hidden",
+  },
+  fill: {
+    height: "100%",
+    borderRadius: 3,
+  },
+  footer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  statGroup: {
+    alignItems: "center",
+    marginRight: 16,
+  },
+  statNum: {
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  statLabel: {
+    fontSize: 9,
+    fontWeight: "900",
+    letterSpacing: 0.5,
+  },
+  divider: {
+    width: 1,
+    height: 20,
+    backgroundColor: "#eee",
+    marginRight: 16,
+    opacity: 0.5,
+  },
+  actions: {
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 8,
+  },
+  actionBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 10
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: "700"
-  },
-  metaRow: {
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 10
-  },
-  metaItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4
-  },
-  metaText: {
-    fontSize: 12,
-    fontWeight: "600"
-  },
-  progressWrap: {
-    marginBottom: 12
-  },
-  progressTrack: {
-    height: 8,
-    borderRadius: 999,
-    overflow: "hidden"
-  },
-  progressFill: {
-    height: "100%",
-    borderRadius: 999
-  },
-  progressText: {
-    marginTop: 5,
-    fontSize: 11,
-    fontWeight: "600"
-  },
-  actionRow: {
-    flexDirection: "row",
-    gap: 8
-  },
-  secondaryBtn: {
-    flex: 1,
-    height: 38,
-    borderRadius: 999,
     borderWidth: 1,
+  },
+  mainAction: {
+    paddingHorizontal: 20,
+    height: 44,
+    borderRadius: 14,
     alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
   },
-  primaryBtn: {
-    flex: 1,
-    height: 38,
-    borderRadius: 999,
-    alignItems: "center",
-    justifyContent: "center"
+  mainActionText: {
+    fontSize: 14,
+    fontWeight: "800",
+    letterSpacing: 0.2,
   },
-  secondaryText: {
-    fontSize: 13,
-    fontWeight: "700"
-  },
-  primaryText: {
-    fontSize: 13,
-    fontWeight: "700"
-  }
 });

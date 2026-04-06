@@ -1,5 +1,15 @@
-import { useMemo, useState } from "react";
-import { FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import React, { useMemo, useState } from "react";
+import {
+  FlatList,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  Dimensions,
+  Platform,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import HabitDetailCard from "../components/HabitDetailCard";
@@ -43,32 +53,28 @@ export default function HabitsScreen({ navigation }) {
     const normalizedQuery = query.trim().toLowerCase();
 
     const base = habits.filter((habit) => {
-      const byQuery = normalizedQuery.length === 0 || habit.name.toLowerCase().includes(normalizedQuery);
+      const hName = habit.title || habit.name || "";
+      const byQuery = normalizedQuery.length === 0 || hName.toLowerCase().includes(normalizedQuery);
       const byStatus =
         statusFilter === "All" ||
         (statusFilter === "Done" && habit.completedToday) ||
         (statusFilter === "Pending" && !habit.completedToday);
-      const byFreq = freqFilter === "All" || habit.frequency === freqFilter;
+      const byFreq = freqFilter === "All" || habit.frequency.toLowerCase() === freqFilter.toLowerCase();
 
       return byQuery && byStatus && byFreq;
     });
 
     const sorted = [...base];
     sorted.sort((a, b) => {
-      if (sortBy === "Name") {
-        return a.name.localeCompare(b.name);
-      }
-      if (sortBy === "Streak") {
-        return b.streak - a.streak;
-      }
+      const aName = a.title || a.name || "";
+      const bName = b.title || b.name || "";
+      
+      if (sortBy === "Name") return aName.localeCompare(bName);
+      if (sortBy === "Streak") return b.streak - a.streak;
       if (sortBy === "Completion") {
         const aRate = a.totalCount > 0 ? a.completedCount / a.totalCount : 0;
         const bRate = b.totalCount > 0 ? b.completedCount / b.totalCount : 0;
         return bRate - aRate;
-      }
-
-      if (a.completedToday !== b.completedToday) {
-        return a.completedToday ? 1 : -1;
       }
       return b.streak - a.streak;
     });
@@ -76,105 +82,81 @@ export default function HabitsScreen({ navigation }) {
     return sorted;
   }, [habits, query, statusFilter, freqFilter, sortBy]);
 
-  async function handleToggle(habitId) {
+  const handleToggle = async (id, completed) => {
     await selectionHaptic();
-    toggleHabit(habitId);
-  }
+    toggleHabit(id, completed);
+  };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
-      <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <SafeAreaView style={{ flex: 1 }}>
         <FlatList
           data={filteredHabits}
           keyExtractor={(item) => item.id}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
+          keyboardShouldPersistTaps="handled"
           ListHeaderComponent={
-            <View style={styles.headerWrap}>
-              <Text style={[theme.typography.heading, { color: theme.colors.textPrimary }]}>All Habits</Text>
-              <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
-                Search, filter and track every habit in detail.
+            <View style={styles.headerArea}>
+              <Text style={[styles.title, { color: theme.colors.textPrimary }]}>All Habits ✨</Text>
+              <Text style={[styles.subtitle, { color: theme.colors.textMuted }]}>
+                Track and manage your lifetime growth library.
               </Text>
 
-              <View style={styles.statRow}>
-                <View style={[styles.statCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-                  <Text style={[styles.statLabel, { color: theme.colors.textMuted }]}>Total</Text>
-                  <Text style={[styles.statValue, { color: theme.colors.textPrimary }]}>{summary.totalHabits}</Text>
+              {/* Stats Bar */}
+              <View style={styles.statsBar}>
+                <View style={[styles.statItem, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+                  <Text style={[styles.statNum, { color: theme.colors.textPrimary }]}>{summary.totalHabits}</Text>
+                  <Text style={[styles.statLabel, { color: theme.colors.textMuted }]}>TOTAL</Text>
                 </View>
-                <View style={[styles.statCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-                  <Text style={[styles.statLabel, { color: theme.colors.textMuted }]}>Done</Text>
-                  <Text style={[styles.statValue, { color: theme.colors.textPrimary }]}>{summary.completedToday}</Text>
+                <View style={[styles.statItem, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+                  <Text style={[styles.statNum, { color: theme.colors.textPrimary }]}>{summary.completedToday}</Text>
+                  <Text style={[styles.statLabel, { color: theme.colors.textMuted }]}>DONE</Text>
                 </View>
-                <View style={[styles.statCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-                  <Text style={[styles.statLabel, { color: theme.colors.textMuted }]}>Pending</Text>
-                  <Text style={[styles.statValue, { color: theme.colors.textPrimary }]}>{summary.pendingToday}</Text>
+                <View style={[styles.statItem, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+                  <Text style={[styles.statNum, { color: theme.colors.textPrimary }]}>{summary.pendingToday}</Text>
+                  <Text style={[styles.statLabel, { color: theme.colors.textMuted }]}>PENDING</Text>
                 </View>
               </View>
 
-              <View style={[styles.searchWrap, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-                <Ionicons name="search-outline" size={16} color={theme.colors.textMuted} />
+              {/* Search Bar */}
+              <View style={[styles.searchBox, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+                <Ionicons name="search" size={18} color={theme.colors.textMuted} />
                 <TextInput
+                  placeholder="Search habits..."
+                  placeholderTextColor={theme.colors.textMuted}
                   value={query}
                   onChangeText={setQuery}
-                  placeholder="Search habits"
-                  placeholderTextColor={theme.colors.textMuted}
                   style={[styles.searchInput, { color: theme.colors.textPrimary }]}
                 />
-                {query.length > 0 ? (
+                {query.length > 0 && (
                   <Pressable onPress={() => setQuery("")}>
-                    <Ionicons name="close-circle" size={16} color={theme.colors.textMuted} />
+                    <Ionicons name="close-circle" size={18} color={theme.colors.textMuted} />
                   </Pressable>
-                ) : null}
+                )}
               </View>
 
-              <View style={styles.filterSection}>
-                <Text style={[styles.filterLabel, { color: theme.colors.textMuted }]}>Status</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                  <View style={styles.chipRow}>
-                    {STATUS_FILTERS.map((option) => (
-                      <Chip
-                        key={option}
-                        label={option}
-                        active={statusFilter === option}
-                        onPress={() => setStatusFilter(option)}
-                        theme={theme}
-                      />
-                    ))}
-                  </View>
+              {/* Filters Scrollers */}
+              <View style={styles.filtersArea}>
+                <Text style={[styles.filterTitle, { color: theme.colors.textMuted }]}>STATUS</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow}>
+                  {STATUS_FILTERS.map(f => (
+                    <Chip key={f} label={f} active={statusFilter === f} onPress={() => setStatusFilter(f)} theme={theme} />
+                  ))}
                 </ScrollView>
-              </View>
 
-              <View style={styles.filterSection}>
-                <Text style={[styles.filterLabel, { color: theme.colors.textMuted }]}>Frequency</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                  <View style={styles.chipRow}>
-                    {FREQ_FILTERS.map((option) => (
-                      <Chip
-                        key={option}
-                        label={option}
-                        active={freqFilter === option}
-                        onPress={() => setFreqFilter(option)}
-                        theme={theme}
-                      />
-                    ))}
-                  </View>
+                <Text style={[styles.filterTitle, { color: theme.colors.textMuted }]}>FREQUENCY</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow}>
+                  {FREQ_FILTERS.map(f => (
+                    <Chip key={f} label={f} active={freqFilter === f} onPress={() => setFreqFilter(f)} theme={theme} />
+                  ))}
                 </ScrollView>
-              </View>
 
-              <View style={styles.filterSection}>
-                <Text style={[styles.filterLabel, { color: theme.colors.textMuted }]}>Sort by</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                  <View style={styles.chipRow}>
-                    {SORT_OPTIONS.map((option) => (
-                      <Chip
-                        key={option}
-                        label={option}
-                        active={sortBy === option}
-                        onPress={() => setSortBy(option)}
-                        theme={theme}
-                      />
-                    ))}
-                  </View>
+                <Text style={[styles.filterTitle, { color: theme.colors.textMuted }]}>SORT BY</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow}>
+                  {SORT_OPTIONS.map(f => (
+                    <Chip key={f} label={f} active={sortBy === f} onPress={() => setSortBy(f)} theme={theme} />
+                  ))}
                 </ScrollView>
               </View>
             </View>
@@ -183,113 +165,112 @@ export default function HabitsScreen({ navigation }) {
             <HabitDetailCard
               habit={item}
               onToggle={handleToggle}
-              onOpenDetail={(habitId) => navigation.navigate("HabitDetail", { habitId })}
+              onOpenDetail={(id) => navigation.navigate("HabitDetail", { habitId: id })}
             />
           )}
           ListEmptyComponent={
-            <View style={[styles.emptyCard, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
-              <Ionicons name="search-outline" size={18} color={theme.colors.textMuted} />
-              <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>No habits match these filters.</Text>
+            <View style={styles.emptyWrap}>
+              <Ionicons name="search-outline" size={50} color={theme.colors.border} />
+              <Text style={[styles.emptyText, { color: theme.colors.textMuted }]}>No habits match these filters.</Text>
             </View>
           }
         />
-      </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1
-  },
   container: {
     flex: 1,
-    paddingHorizontal: 24
   },
   listContent: {
-    paddingBottom: 40
+    paddingHorizontal: 24,
+    paddingBottom: 40,
   },
-  headerWrap: {
-    marginBottom: 6
+  headerArea: {
+    paddingTop: 16,
+    paddingBottom: 24,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: "900",
+    letterSpacing: -1.5,
+    marginBottom: 4,
   },
   subtitle: {
-    marginTop: 6,
-    marginBottom: 14,
     fontSize: 15,
-    fontWeight: "500"
+    fontWeight: "600",
+    marginBottom: 24,
   },
-  statRow: {
+  statsBar: {
     flexDirection: "row",
-    gap: 8,
-    marginBottom: 12
+    gap: 10,
+    marginBottom: 24,
   },
-  statCard: {
+  statItem: {
     flex: 1,
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 10
+    padding: 12,
+    borderRadius: 18,
+    borderWidth: 1.5,
+    alignItems: "center",
+  },
+  statNum: {
+    fontSize: 20,
+    fontWeight: "900",
   },
   statLabel: {
-    fontSize: 11,
-    fontWeight: "700",
-    marginBottom: 4
+    fontSize: 9,
+    fontWeight: "900",
+    letterSpacing: 1,
   },
-  statValue: {
-    fontSize: 18,
-    fontWeight: "700"
-  },
-  searchWrap: {
-    borderWidth: 1,
-    borderRadius: 12,
-    height: 46,
+  searchBox: {
+    height: 54,
+    borderRadius: 18,
+    borderWidth: 1.5,
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    paddingHorizontal: 12,
-    marginBottom: 12
+    paddingHorizontal: 16,
+    gap: 12,
+    marginBottom: 24,
   },
   searchInput: {
     flex: 1,
     fontSize: 15,
-    fontWeight: "500"
-  },
-  filterSection: {
-    marginBottom: 10
-  },
-  filterLabel: {
-    fontSize: 12,
     fontWeight: "700",
-    marginBottom: 7
   },
-  chipRow: {
-    flexDirection: "row",
-    gap: 8
+  filtersArea: {
+    gap: 12,
+  },
+  filterTitle: {
+    fontSize: 9,
+    fontWeight: "900",
+    letterSpacing: 1.5,
+    marginLeft: 4,
+  },
+  filterRow: {
+    marginBottom: 4,
   },
   chip: {
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    height: 34,
+    paddingHorizontal: 16,
+    height: 38,
+    borderRadius: 14,
+    borderWidth: 1.5,
     alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
+    marginRight: 8,
   },
   chipText: {
     fontSize: 12,
-    fontWeight: "700"
+    fontWeight: "800",
   },
-  emptyCard: {
-    marginTop: 10,
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 14,
-    flexDirection: "row",
+  emptyWrap: {
     alignItems: "center",
-    gap: 8
+    marginTop: 60,
+    gap: 16,
   },
   emptyText: {
-    fontSize: 14,
-    fontWeight: "600"
-  }
+    fontSize: 16,
+    fontWeight: "600",
+  },
 });

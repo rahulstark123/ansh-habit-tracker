@@ -1,90 +1,137 @@
-import { createContext, useContext, useMemo, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useMemo } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useAuth } from "./AuthContext";
 
 const HabitContext = createContext(null);
 
-const initialHabits = [
-  {
-    id: "1",
-    name: "Drink Water",
-    frequency: "Daily",
-    completedToday: false,
-    streak: 7,
-    completedCount: 18,
-    totalCount: 22
-  },
-  {
-    id: "2",
-    name: "Read 20 Minutes",
-    frequency: "Daily",
-    completedToday: true,
-    streak: 12,
-    completedCount: 26,
-    totalCount: 30
-  },
-  {
-    id: "3",
-    name: "Workout",
-    frequency: "Weekly",
-    completedToday: false,
-    streak: 4,
-    completedCount: 9,
-    totalCount: 12
-  }
-];
+const API_URL = "https://ansh-habit-tracker-api.vercel.app/api";
 
-function updateStats(habit, nextCompleted) {
-  if (nextCompleted) {
-    return {
-      ...habit,
-      completedToday: true,
-      streak: habit.streak + 1,
-      completedCount: habit.completedCount + 1,
-      totalCount: habit.totalCount + 1
-    };
-  }
-
-  return {
-    ...habit,
-    completedToday: false,
-    streak: Math.max(0, habit.streak - 1),
-    completedCount: Math.max(0, habit.completedCount - 1),
-    totalCount: Math.max(1, habit.totalCount)
-  };
-}
+// Helper for safe storage in React Native
+const safeStorage = {
+  getItem: async (key) => {
+    try {
+      return await AsyncStorage.getItem(key);
+    } catch (e) {
+      return null;
+    }
+  },
+  setItem: async (key, value) => {
+    try {
+      await AsyncStorage.setItem(key, value);
+    } catch (e) {}
+  },
+};
 
 export function HabitProvider({ children }) {
-  const [habits, setHabits] = useState(initialHabits);
+  const [habits, setHabits] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+
+  // Load habits on mount or when user changes
+  useEffect(() => {
+    if (user) {
+      fetchHabits();
+    } else {
+      setHabits([]);
+      setLoading(false);
+    }
+  }, [user]);
+
+  const fetchHabits = async () => {
+    try {
+      const token = await safeStorage.getItem("user_token");
+      const response = await fetch(`${API_URL}/habits`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setHabits(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch habits:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addHabit = async (habitData) => {
+    try {
+      const token = await safeStorage.getItem("user_token");
+      const response = await fetch(`${API_URL}/habits`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(habitData),
+      });
+      const newHabit = await response.json();
+      if (response.ok) {
+        setHabits((prev) => [newHabit, ...prev]);
+        return { success: true };
+      }
+      return { success: false, error: newHabit.error };
+    } catch (err) {
+      return { success: false, error: "Network error" };
+    }
+  };
+
+  const toggleHabit = async (habitId, completed) => {
+    try {
+      const token = await safeStorage.getItem("user_token");
+      // Update locally first for snappy UI (Optimistic Update)
+      const originalHabits = [...habits];
+      setHabits((prev) =>
+        prev.map((h) => (h.id === habitId ? { ...h, completedToday: completed } : h))
+      );
+
+      const response = await fetch(`${API_URL}/habits/${habitId}/log`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ completed }),
+      });
+
+      if (!response.ok) {
+        setHabits(originalHabits); // Rollback on error
+      }
+    } catch (err) {
+      console.error("Failed to toggle habit:", err);
+    }
+  };
+
+  const deleteHabit = async (habitId) => {
+    try {
+      const token = await safeStorage.getItem("user_token");
+      const response = await fetch(`${API_URL}/habits/${habitId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (response.ok) {
+        setHabits((prev) => prev.filter((h) => h.id !== habitId));
+      }
+    } catch (err) {
+      console.error("Failed to delete habit:", err);
+    }
+  };
 
   const value = useMemo(
     () => ({
       habits,
-      toggleHabit: (habitId) => {
-        setHabits((current) =>
-          current.map((habit) => {
-            if (habit.id !== habitId) {
-              return habit;
-            }
-            return updateStats(habit, !habit.completedToday);
-          })
-        );
-      },
-      addHabit: ({ name, frequency }) => {
-        setHabits((current) => [
-          {
-            id: String(Date.now()),
-            name: name.trim(),
-            frequency,
-            completedToday: false,
-            streak: 0,
-            completedCount: 0,
-            totalCount: 1
-          },
-          ...current
-        ]);
-      },
-      getHabitById: (habitId) => habits.find((habit) => habit.id === habitId)
+      loading,
+      addHabit,
+      toggleHabit,
+      deleteHabit,
+      refreshHabits: fetchHabits,
+      getHabitById: (id) => habits.find((h) => h.id === id),
     }),
-    [habits]
+    [habits, loading]
   );
 
   return <HabitContext.Provider value={value}>{children}</HabitContext.Provider>;

@@ -1,124 +1,324 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import React, { useState } from "react";
+import {
+  StyleSheet,
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  TextInput,
+  Dimensions,
+  Platform,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Button from "../components/Button";
-import FrequencyBottomSheet from "../components/FrequencyBottomSheet";
-import Input from "../components/Input";
+import { Ionicons } from "@expo/vector-icons";
 import { useHabits } from "../context/HabitContext";
 import { useAppTheme } from "../theme";
 import { selectionHaptic, successHaptic } from "../utils/haptics";
-import { useState } from "react";
+
+const { width } = Dimensions.get("window");
+
+const COLORS = ["#6366f1", "#10b981", "#f59e0b", "#ef4444", "#ec4899", "#8b5cf6", "#06b6d4"];
+const ICONS = ["water-outline", "book-outline", "fitness-outline", "musical-notes-outline", "fast-food-outline", "timer-outline", "moon-outline", "sunny-outline"];
+const FREQUENCIES = ["Daily", "Weekly", "Monthly"];
+const TIMES = ["morning", "afternoon", "evening", "all"];
 
 export default function AddHabitScreen({ navigation }) {
   const theme = useAppTheme();
   const { addHabit } = useHabits();
 
-  const [habitName, setHabitName] = useState("");
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [selectedIcon, setSelectedIcon] = useState(ICONS[0]);
+  const [selectedColor, setSelectedColor] = useState(COLORS[0]);
   const [frequency, setFrequency] = useState("Daily");
-  const [showSheet, setShowSheet] = useState(false);
+  const [targetValue, setTargetValue] = useState("1");
+  const [targetUnit, setTargetUnit] = useState("times");
+  const [timeOfDay, setTimeOfDay] = useState("all");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const isDisabled = habitName.trim().length === 0;
+  const isDisabled = title.trim().length === 0;
 
-  async function handleCreateHabit() {
-    if (isDisabled) {
-      return;
+  const handleCreate = async () => {
+    if (isDisabled) return;
+    setIsSubmitting(true);
+    
+    const result = await addHabit({
+      title: title.trim(),
+      description: description.trim(),
+      icon: selectedIcon,
+      color: selectedColor,
+      frequency: frequency.toLowerCase(),
+      targetValue: parseInt(targetValue) || 1,
+      targetUnit,
+      timeOfDay,
+    });
+
+    if (result.success) {
+      await successHaptic();
+      navigation.goBack();
+    } else {
+      alert(result.error || "Failed to create habit");
+      setIsSubmitting(false);
     }
-    addHabit({ name: habitName, frequency });
-    await successHaptic();
-    navigation.goBack();
-  }
-
-  async function openFrequencySheet() {
-    await selectionHaptic();
-    setShowSheet(true);
-  }
+  };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
-      <View style={styles.content}>
-        <Text style={[theme.typography.heading, { color: theme.colors.textPrimary }]}>Add Habit</Text>
-
-        <View style={styles.fieldGroup}>
-          <View style={styles.labelRow}>
-            <Ionicons name="create-outline" size={14} color={theme.colors.textSecondary} />
-            <Text style={[styles.label, { color: theme.colors.textSecondary }]}>Habit Name</Text>
-          </View>
-          <Input value={habitName} onChangeText={setHabitName} placeholder="Morning Walk" />
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <SafeAreaView style={{ flex: 1 }}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Ionicons name="close" size={24} color={theme.colors.textPrimary} />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: theme.colors.textPrimary }]}>New Habit 🎯</Text>
+          <View style={{ width: 44 }} />
         </View>
 
-        <View style={styles.fieldGroup}>
-          <View style={styles.labelRow}>
-            <Ionicons name="repeat-outline" size={14} color={theme.colors.textSecondary} />
-            <Text style={[styles.label, { color: theme.colors.textSecondary }]}>Frequency</Text>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          {/* Preview Card */}
+          <View style={[styles.preview, { backgroundColor: selectedColor + "15", borderColor: selectedColor }]}>
+            <Ionicons name={selectedIcon} size={30} color={selectedColor} />
+            <Text style={[styles.previewText, { color: selectedColor }]}>
+              {title || "Morning Ritual ✨"}
+            </Text>
           </View>
-          <Pressable
-            onPress={openFrequencySheet}
+
+          <View style={styles.section}>
+            <Text style={[styles.sectionLabel, { color: theme.colors.textMuted }]}>NAME & DESCRIPTION</Text>
+            <View style={[styles.inputBox, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+              <TextInput
+                style={[styles.input, { color: theme.colors.textPrimary }]}
+                placeholder="What's the goal? 🔥"
+                placeholderTextColor={theme.colors.textMuted}
+                value={title}
+                onChangeText={setTitle}
+              />
+            </View>
+            <View style={[styles.inputBox, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border, height: 80, marginTop: 12 }]}>
+              <TextInput
+                style={[styles.input, { color: theme.colors.textPrimary, height: 60 }]}
+                placeholder="Your motivational 'Why'... 🛡️"
+                placeholderTextColor={theme.colors.textMuted}
+                multiline
+                value={description}
+                onChangeText={setDescription}
+              />
+            </View>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={[styles.sectionLabel, { color: theme.colors.textMuted }]}>VISUAL DNA 🎨</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pillScroll}>
+              {ICONS.map((icon) => (
+                <TouchableOpacity
+                  key={icon}
+                  onPress={() => { selectionHaptic(); setSelectedIcon(icon); }}
+                  style={[
+                    styles.iconPill, 
+                    { backgroundColor: selectedIcon === icon ? theme.colors.textPrimary : theme.colors.surface }
+                  ]}
+                >
+                  <Ionicons name={icon} size={20} color={selectedIcon === icon ? theme.colors.background : theme.colors.textPrimary} />
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            <View style={styles.colorRow}>
+              {COLORS.map((color) => (
+                <TouchableOpacity
+                  key={color}
+                  onPress={() => { selectionHaptic(); setSelectedColor(color); }}
+                  style={[
+                    styles.colorCircle, 
+                    { backgroundColor: color, borderWidth: selectedColor === color ? 3 : 0, borderColor: theme.colors.textPrimary }
+                  ]}
+                />
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={[styles.sectionLabel, { color: theme.colors.textMuted }]}>GOAL SETTING 🎯</Text>
+            <View style={styles.goalRow}>
+              <View style={[styles.inputBox, { flex: 1, backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+                <TextInput
+                  style={[styles.input, { color: theme.colors.textPrimary }]}
+                  keyboardType="numeric"
+                  value={targetValue}
+                  onChangeText={setTargetValue}
+                />
+              </View>
+              <View style={[styles.inputBox, { flex: 2, backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+                <TextInput
+                  style={[styles.input, { color: theme.colors.textPrimary }]}
+                  placeholder="times/glasses/mins"
+                  placeholderTextColor={theme.colors.textMuted}
+                  value={targetUnit}
+                  onChangeText={setTargetUnit}
+                />
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={[styles.sectionLabel, { color: theme.colors.textMuted }]}>ROUTINE 🕒</Text>
+            <View style={styles.pillGrid}>
+              {TIMES.map((time) => (
+                <TouchableOpacity
+                  key={time}
+                  onPress={() => { selectionHaptic(); setTimeOfDay(time); }}
+                  style={[
+                    styles.freqPill,
+                    { 
+                      backgroundColor: timeOfDay === time ? theme.colors.textPrimary : theme.colors.surface,
+                      borderColor: theme.colors.border
+                    }
+                  ]}
+                >
+                  <Text style={[styles.pillText, { color: timeOfDay === time ? theme.colors.background : theme.colors.textPrimary }]}>
+                    {time.charAt(0).toUpperCase() + time.slice(1)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </ScrollView>
+
+        <View style={styles.footer}>
+          <TouchableOpacity
+            onPress={handleCreate}
+            disabled={isDisabled || isSubmitting}
+            activeOpacity={0.9}
             style={[
-              styles.frequencyInput,
-              {
-                borderColor: theme.colors.border,
-                backgroundColor: theme.colors.surface
-              }
+              styles.createButton, 
+              { backgroundColor: theme.colors.textPrimary, opacity: isDisabled ? 0.5 : 1 }
             ]}
           >
-            <Text style={[styles.frequencyText, { color: theme.colors.textPrimary }]}>{frequency}</Text>
-            <Ionicons name="chevron-down" size={17} color={theme.colors.textMuted} />
-          </Pressable>
+            <Text style={[styles.createButtonText, { color: theme.colors.background }]}>
+              {isSubmitting ? "Syncing..." : "Create Life Habit 🔥"}
+            </Text>
+          </TouchableOpacity>
         </View>
-
-        <View style={styles.buttonWrap}>
-          <Button title="Create Habit" onPress={handleCreateHabit} disabled={isDisabled} />
-        </View>
-      </View>
-
-      <FrequencyBottomSheet
-        visible={showSheet}
-        selected={frequency}
-        onSelect={setFrequency}
-        onClose={() => setShowSheet(false)}
-      />
-    </SafeAreaView>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1
-  },
-  content: {
+  container: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 8
   },
-  fieldGroup: {
-    marginTop: 24
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "600",
-    marginBottom: 0
-  },
-  labelRow: {
+  header: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    marginBottom: 10
-  },
-  frequencyInput: {
-    height: 50,
-    borderRadius: 12,
-    borderWidth: 1,
+    justifyContent: "space-between",
     paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+  },
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  scrollContent: {
+    padding: 24,
+  },
+  preview: {
+    height: 120,
+    borderRadius: 24,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 32,
+    gap: 10,
+  },
+  previewText: {
+    fontSize: 20,
+    fontWeight: "900",
+  },
+  section: {
+    marginBottom: 28,
+  },
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 1.5,
+    marginBottom: 12,
+  },
+  inputBox: {
+    height: 56,
+    borderRadius: 18,
+    borderWidth: 1.5,
+    paddingHorizontal: 16,
+    justifyContent: "center",
+  },
+  input: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  pillScroll: {
+    marginBottom: 16,
+  },
+  iconPill: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    marginRight: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  colorRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center"
   },
-  frequencyText: {
-    fontSize: 16,
-    fontWeight: "500"
+  colorCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
   },
-  buttonWrap: {
-    marginTop: "auto",
-    marginBottom: 26
-  }
+  goalRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  pillGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+  },
+  freqPill: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    minWidth: 80,
+    alignItems: "center",
+  },
+  pillText: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  footer: {
+    padding: 24,
+    paddingBottom: Platform.OS === "ios" ? 10 : 24,
+  },
+  createButton: {
+    height: 64,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 5,
+  },
+  createButtonText: {
+    fontSize: 18,
+    fontWeight: "800",
+    letterSpacing: 0.5,
+  },
 });

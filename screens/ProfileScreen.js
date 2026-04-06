@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ThemeSelectorSheet from "../components/ThemeSelectorSheet";
@@ -52,6 +52,17 @@ export default function ProfileScreen({ navigation }) {
   const themeLabel =
     theme.mode === "system" ? "System" : theme.mode === "dark" ? "Dark" : "Light";
 
+  const joinDate = useMemo(() => {
+    if (!user?.createdAt) return "Unknown";
+    const date = new Date(user.createdAt);
+    return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  }, [user]);
+
+  async function handleProfileClick() {
+    await selectionHaptic();
+    navigation.navigate("PersonalDetails");
+  }
+
   async function openThemeSheet() {
     await selectionHaptic();
     setShowThemeSheet(true);
@@ -63,7 +74,7 @@ export default function ProfileScreen({ navigation }) {
   }
 
   function placeholderAction(title) {
-    Alert.alert(title, "UI ready. Backend connection can be added next.");
+    Alert.alert(title, "UI ready. Backend connection can be added next. 💡");
   }
 
   async function openWeek() {
@@ -88,74 +99,85 @@ export default function ProfileScreen({ navigation }) {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={[theme.typography.heading, { color: theme.colors.textPrimary }]}>Profile</Text>
-        <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>Premium control center for your habits.</Text>
+        <View style={styles.topHeader}>
+          <View>
+            <Text style={[styles.mainTitle, { color: theme.colors.textPrimary }]}>Profile ✨</Text>
+            <Text style={[styles.subtitle, { color: theme.colors.textMuted }]}>Management & Identity</Text>
+          </View>
+          <View style={[styles.proBadge, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
+            <Ionicons name="diamond" size={12} color={theme.colors.textPrimary} />
+            <Text style={[styles.proText, { color: theme.colors.textPrimary }]}>PRO</Text>
+          </View>
+        </View>
 
-        <View style={[styles.hero, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
+        <Pressable 
+          onPress={handleProfileClick}
+          style={({ pressed }) => [
+            styles.hero, 
+            { backgroundColor: theme.colors.card, borderColor: theme.colors.border, opacity: pressed ? 0.95 : 1 }
+          ]}
+        >
           <View style={[styles.avatar, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
             <Text style={[styles.avatarText, { color: theme.colors.textPrimary }]}>
               {user?.name?.charAt(0) || "U"}
             </Text>
           </View>
           <View style={styles.heroInfo}>
-            <Text style={[styles.name, { color: theme.colors.textPrimary }]}>{user?.name || "User"}</Text>
+            <Text style={[styles.name, { color: theme.colors.textPrimary }]}>{user?.name || "User"} 👋</Text>
             <Text style={[styles.email, { color: theme.colors.textMuted }]}>{user?.email || ""}</Text>
-            {user?.goal && (
-              <View style={styles.goalTag}>
-                <Ionicons name="compass-outline" size={10} color={theme.colors.textMuted} />
-                <Text style={[styles.goalText, { color: theme.colors.textMuted }]}>
-                  {user.goal === "build" ? "Building Habits 🔨" : user.goal === "consistent" ? "Staying Consistent ♾️" : "Improving Productivity ⚡"}
+            <View style={styles.badgeRow}>
+              <View style={[styles.miniBadge, { backgroundColor: theme.colors.surface }]}>
+                <Text style={[styles.miniBadgeText, { color: theme.colors.textMuted }]}>
+                  {user?.goal === "build" ? "Building 🔨" : user?.goal === "consistent" ? "Consistent ♾️" : "Productive ⚡"}
                 </Text>
               </View>
-            )}
+              <View style={[styles.miniBadge, { backgroundColor: theme.colors.surface }]}>
+                <Text style={[styles.miniBadgeText, { color: theme.colors.textMuted }]}>
+                  Joined {joinDate} 🛡️
+                </Text>
+              </View>
+            </View>
           </View>
-          <View style={[styles.proBadge, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
-            <Ionicons name="diamond-outline" size={12} color={theme.colors.textPrimary} />
-            <Text style={[styles.proText, { color: theme.colors.textPrimary }]}>Pro 💎</Text>
-          </View>
-        </View>
+          <Ionicons name="chevron-forward" size={18} color={theme.colors.textMuted} />
+        </Pressable>
 
         <View style={styles.quickRow}>
           <Pressable
             onPress={openWeek}
             style={[styles.quickCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
           >
-            <Ionicons name="calendar-outline" size={16} color={theme.colors.textPrimary} />
+            <Ionicons name="stats-chart" size={16} color={theme.colors.textPrimary} />
             <Text style={[styles.quickValue, { color: theme.colors.textPrimary }]}>{summary.todayCompletionRate}%</Text>
-            <Text style={[styles.quickLabel, { color: theme.colors.textMuted }]}>Today Score 🎯</Text>
+            <Text style={[styles.quickLabel, { color: theme.colors.textMuted }]}>Daily Score 🎯</Text>
           </Pressable>
 
           <Pressable
             onPress={openMilestones}
             style={[styles.quickCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
           >
-            <Ionicons name="flame-outline" size={16} color={theme.colors.textPrimary} />
+            <Ionicons name="flame" size={16} color={theme.colors.textPrimary} />
             <Text style={[styles.quickValue, { color: theme.colors.textPrimary }]}>{summary.bestStreak}</Text>
             <Text style={[styles.quickLabel, { color: theme.colors.textMuted }]}>Best Streak 🔥</Text>
           </Pressable>
         </View>
 
         <Section title="Account" theme={theme}>
-          <SettingRow icon="person-circle-outline" label="Edit Profile" theme={theme} onPress={() => placeholderAction("Edit Profile")} />
+          <SettingRow icon="person-outline" label="Personal Details" theme={theme} onPress={handleProfileClick} />
           <Divider theme={theme} />
-          <SettingRow icon="key-outline" label="Change Password" theme={theme} onPress={() => placeholderAction("Change Password")} />
+          <SettingRow icon="key-outline" label="Security & Password" theme={theme} onPress={() => placeholderAction("Security")} />
           <Divider theme={theme} />
-          <SettingRow icon="shield-checkmark-outline" label="Two-Factor Authentication" theme={theme} onPress={() => placeholderAction("2FA Settings")} />
-          <Divider theme={theme} />
-          <SettingRow icon="phone-portrait-outline" label="Connected Devices" theme={theme} onPress={() => placeholderAction("Connected Devices")} />
-          <Divider theme={theme} />
-          <SettingRow icon="log-out-outline" label="Log Out All Devices" theme={theme} onPress={() => placeholderAction("Log Out All Devices")} />
+          <SettingRow icon="shield-checkmark-outline" label="Privacy Settings" theme={theme} onPress={() => placeholderAction("Privacy")} />
         </Section>
 
         <Section title="Preferences" theme={theme}>
-          <SettingRow icon="color-palette-outline" label="Theme" value={themeLabel} theme={theme} onPress={openThemeSheet} />
+          <SettingRow icon="color-palette-outline" label="App Theme" value={themeLabel} theme={theme} onPress={openThemeSheet} />
           <Divider theme={theme} />
           <View style={styles.row}>
             <View style={styles.rowLeft}>
               <View style={[styles.iconWrap, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
                 <Ionicons name="notifications-outline" size={15} color={theme.colors.textPrimary} />
               </View>
-              <Text style={[styles.rowLabel, { color: theme.colors.textPrimary }]}>Notifications</Text>
+              <Text style={[styles.rowLabel, { color: theme.colors.textPrimary }]}>Push Notifications</Text>
             </View>
             <Switch
               value={notificationsEnabled}
@@ -164,24 +186,12 @@ export default function ProfileScreen({ navigation }) {
               thumbColor={theme.colors.card}
             />
           </View>
-          <Divider theme={theme} />
-          <SettingRow icon="language-outline" label="Language" value="English" theme={theme} onPress={() => placeholderAction("Language")} />
         </Section>
 
         <Section title="Support" theme={theme}>
-          <SettingRow icon="help-circle-outline" label="Help Center" theme={theme} onPress={() => placeholderAction("Help Center")} />
+          <SettingRow icon="help-circle-outline" label="Help & Feedback" theme={theme} onPress={() => placeholderAction("Help")} />
           <Divider theme={theme} />
-          <SettingRow icon="headset-outline" label="Contact Support" theme={theme} onPress={() => placeholderAction("Contact Support")} />
-          <Divider theme={theme} />
-          <SettingRow icon="chatbubble-ellipses-outline" label="Send Feedback" theme={theme} onPress={() => placeholderAction("Send Feedback")} />
-        </Section>
-
-        <Section title="Privacy & Legal" theme={theme}>
-          <SettingRow icon="lock-closed-outline" label="Privacy Policy" theme={theme} onPress={() => placeholderAction("Privacy Policy")} />
-          <Divider theme={theme} />
-          <SettingRow icon="document-text-outline" label="Terms of Service" theme={theme} onPress={() => placeholderAction("Terms of Service")} />
-          <Divider theme={theme} />
-          <SettingRow icon="download-outline" label="Export My Data" theme={theme} onPress={() => placeholderAction("Data Export")} />
+          <SettingRow icon="document-text-outline" label="Legal & Terms" theme={theme} onPress={() => placeholderAction("Legal")} />
         </Section>
 
         <Section title="Session" theme={theme}>
@@ -215,117 +225,132 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 24,
-    paddingTop: 8,
+    paddingTop: 16,
     paddingBottom: 40
   },
+  topHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 24,
+  },
+  mainTitle: {
+    fontSize: 34,
+    fontWeight: "900",
+    letterSpacing: -1,
+  },
   subtitle: {
-    marginTop: 6,
-    marginBottom: 16,
     fontSize: 15,
-    fontWeight: "500"
+    fontWeight: "600",
+    marginTop: 2,
   },
   hero: {
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
+    borderWidth: 1.5,
+    borderRadius: 24,
+    padding: 20,
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 12
+    marginBottom: 20,
   },
   avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    borderWidth: 1,
+    width: 60,
+    height: 60,
+    borderRadius: 20,
+    borderWidth: 1.5,
     alignItems: "center",
     justifyContent: "center"
   },
   avatarText: {
-    fontSize: 18,
-    fontWeight: "700"
+    fontSize: 22,
+    fontWeight: "800"
   },
   heroInfo: {
     flex: 1,
-    marginLeft: 12
+    marginLeft: 16
   },
   name: {
-    fontSize: 17,
-    fontWeight: "700",
+    fontSize: 18,
+    fontWeight: "800",
     marginBottom: 2
   },
   email: {
     fontSize: 13,
-    fontWeight: "500",
-    marginBottom: 4
-  },
-  goalTag: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4
-  },
-  goalText: {
-    fontSize: 11,
     fontWeight: "600",
+    marginBottom: 8
+  },
+  badgeRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  miniBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  miniBadgeText: {
+    fontSize: 10,
+    fontWeight: "900",
     textTransform: "uppercase",
-    letterSpacing: 0.5
+    letterSpacing: 0.5,
   },
   proBadge: {
     borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: 9,
-    height: 28,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    height: 30,
     flexDirection: "row",
     alignItems: "center",
-    gap: 5
+    gap: 6
   },
   proText: {
-    fontSize: 12,
-    fontWeight: "700"
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 1,
   },
   quickRow: {
     flexDirection: "row",
-    gap: 10,
-    marginBottom: 16
+    gap: 12,
+    marginBottom: 24
   },
   quickCard: {
     flex: 1,
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 12
+    borderWidth: 1.5,
+    borderRadius: 22,
+    padding: 16,
   },
   quickValue: {
     marginTop: 8,
-    fontSize: 20,
-    fontWeight: "700"
+    fontSize: 22,
+    fontWeight: "900"
   },
   quickLabel: {
-    marginTop: 3,
+    marginTop: 2,
     fontSize: 12,
-    fontWeight: "600"
+    fontWeight: "800"
   },
   section: {
-    marginBottom: 12
+    marginBottom: 16
   },
   sectionTitle: {
-    fontSize: 12,
-    fontWeight: "700",
-    letterSpacing: 0.5,
-    marginBottom: 8
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 1.5,
+    textTransform: "uppercase",
+    marginBottom: 10,
+    marginLeft: 4,
   },
   sectionCard: {
-    borderWidth: 1,
-    borderRadius: 12,
+    borderWidth: 1.5,
+    borderRadius: 22,
     overflow: "hidden"
   },
   divider: {
     height: 1,
-    marginLeft: 50
+    marginLeft: 54
   },
   row: {
-    minHeight: 56,
-    paddingHorizontal: 12,
+    minHeight: 60,
+    paddingHorizontal: 16,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between"
@@ -333,29 +358,29 @@ const styles = StyleSheet.create({
   rowLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: 12,
     flex: 1
   },
   rowRight: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 5
+    gap: 8
   },
   iconWrap: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 32,
+    height: 32,
+    borderRadius: 12,
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center"
   },
   rowLabel: {
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: 15,
+    fontWeight: "700",
     flex: 1
   },
   rowValue: {
     fontSize: 13,
-    fontWeight: "600"
+    fontWeight: "700"
   }
 });

@@ -5,42 +5,44 @@ import { useAppTheme } from "../theme";
 
 export default function HabitCard({ habit, onToggle, onOpenDetail }) {
   const theme = useAppTheme();
-  const completedAnim = useRef(new Animated.Value(habit.completedToday ? 1 : 0)).current;
+  
+  // Support both backend 'title' and frontend-fallback 'name'
+  const title = habit.title || habit.name || "Untitled Habit";
+  const icon = habit.icon || "star-outline";
+  const color = habit.color || theme.colors.textPrimary;
+  const isCompleted = habit.completedToday;
+  
+  const completedAnim = useRef(new Animated.Value(isCompleted ? 1 : 0)).current;
   const toggleScaleAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     Animated.timing(completedAnim, {
-      toValue: habit.completedToday ? 1 : 0,
-      duration: 180,
+      toValue: isCompleted ? 1 : 0,
+      duration: 250,
       useNativeDriver: false
     }).start();
-  }, [completedAnim, habit.completedToday]);
+  }, [isCompleted]);
 
   function handleToggle() {
     Animated.sequence([
       Animated.timing(toggleScaleAnim, {
-        toValue: 1.08,
-        duration: 90,
+        toValue: 1.15,
+        duration: 100,
         useNativeDriver: true
       }),
       Animated.spring(toggleScaleAnim, {
         toValue: 1,
         useNativeDriver: true,
-        speed: 26,
-        bounciness: 6
+        speed: 20,
+        bounciness: 8
       })
     ]).start();
-    onToggle(habit.id);
+    onToggle(habit.id, !isCompleted);
   }
 
-  const bgColor = completedAnim.interpolate({
+  const cardBg = completedAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [theme.colors.card, theme.colors.surface]
-  });
-
-  const textOpacity = completedAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [1, 0.82]
   });
 
   return (
@@ -48,87 +50,122 @@ export default function HabitCard({ habit, onToggle, onOpenDetail }) {
       style={[
         styles.card,
         {
-          backgroundColor: bgColor,
-          borderWidth: 1,
-          borderColor: theme.colors.border
+          backgroundColor: cardBg,
+          borderColor: isCompleted ? color + "40" : theme.colors.border,
+          borderWidth: 1.5,
         }
       ]}
     >
-      <Pressable onPress={handleToggle} style={styles.topRow}>
-        <Animated.View style={{ flex: 1, opacity: textOpacity }}>
-          <View style={styles.nameRow}>
-            <Ionicons name="ellipse-outline" size={13} color={theme.colors.textSecondary} />
-            <Text style={[styles.name, { color: theme.colors.textPrimary }]}>{habit.name}</Text>
+      <View style={styles.mainContent}>
+        <Pressable onPress={handleToggle} style={styles.iconContainer}>
+          <View style={[styles.iconWrap, { backgroundColor: isCompleted ? color : theme.colors.surface }]}>
+            <Ionicons 
+              name={icon} 
+              size={22} 
+              color={isCompleted ? theme.colors.background : color} 
+            />
           </View>
-          <Text style={[styles.frequency, { color: theme.colors.textSecondary }]}>{habit.frequency}</Text>
-        </Animated.View>
+        </Pressable>
+
+        <Pressable onPress={() => onOpenDetail(habit.id)} style={styles.infoArea}>
+          <Text style={[
+            styles.name, 
+            { color: theme.colors.textPrimary, textDecorationLine: isCompleted ? "line-through" : "none", opacity: isCompleted ? 0.6 : 1 }
+          ]}>
+            {title}
+          </Text>
+          <View style={styles.metaRow}>
+            <Text style={[styles.metaText, { color: theme.colors.textMuted }]}>
+              {habit.frequency.toUpperCase()}
+            </Text>
+            {habit.targetValue > 1 && (
+              <>
+                <View style={[styles.dot, { backgroundColor: theme.colors.textMuted }]} />
+                <Text style={[styles.metaText, { color: color }]}>
+                  Goal: {habit.targetValue} {habit.targetUnit}
+                </Text>
+              </>
+            )}
+          </View>
+        </Pressable>
 
         <Animated.View style={{ transform: [{ scale: toggleScaleAnim }] }}>
-          <View
+          <TouchableOpacity 
+            activeOpacity={0.7} 
+            onPress={handleToggle}
             style={[
-              styles.toggleOuter,
-              {
-                borderColor: habit.completedToday ? theme.colors.textPrimary : theme.colors.textMuted,
-                backgroundColor: habit.completedToday ? theme.colors.textPrimary : "transparent"
+              styles.checkbox, 
+              { 
+                borderColor: isCompleted ? color : theme.colors.border,
+                backgroundColor: isCompleted ? color : "transparent"
               }
             ]}
           >
-            {habit.completedToday ? <View style={[styles.toggleInner, { backgroundColor: theme.colors.card }]} /> : null}
-          </View>
+            {isCompleted && <Ionicons name="checkmark" size={16} color={theme.colors.background} />}
+          </TouchableOpacity>
         </Animated.View>
-      </Pressable>
-
-      <Pressable onPress={() => onOpenDetail(habit.id)} style={styles.detailTap}>
-        <Text style={[styles.detailText, { color: theme.colors.accent }]}>Details</Text>
-      </Pressable>
+      </View>
     </Animated.View>
   );
 }
 
+// Re-defining TouchableOpacity as Pressable for safety in this file
+const TouchableOpacity = Pressable;
+
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 12,
     paddingHorizontal: 16,
-    paddingVertical: 14,
-    marginBottom: 12
+    paddingVertical: 18,
+    borderRadius: 24,
+    marginBottom: 12,
   },
-  topRow: {
+  mainContent: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12
+    gap: 16,
+  },
+  iconContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  iconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  infoArea: {
+    flex: 1,
   },
   name: {
     fontSize: 17,
-    fontWeight: "600",
-    marginBottom: 4
+    fontWeight: "800",
+    marginBottom: 4,
+    letterSpacing: -0.3,
   },
-  nameRow: {
+  metaRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6
+    gap: 8,
   },
-  frequency: {
-    fontSize: 14,
-    fontWeight: "500"
+  metaText: {
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 0.8,
   },
-  toggleOuter: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+  dot: {
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    opacity: 0.5,
+  },
+  checkbox: {
+    width: 30,
+    height: 30,
+    borderRadius: 10,
     borderWidth: 2,
     alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
   },
-  toggleInner: {
-    width: 12,
-    height: 12,
-    borderRadius: 6
-  },
-  detailTap: {
-    marginTop: 10
-  },
-  detailText: {
-    fontSize: 13,
-    fontWeight: "600"
-  }
 });

@@ -14,6 +14,7 @@ import WeekScreen from "./screens/WeekScreen";
 import HabitsScreen from "./screens/HabitsScreen";
 import MilestonesScreen from "./screens/MilestonesScreen";
 import ProfileScreen from "./screens/ProfileScreen";
+import PersonalDetailsScreen from "./screens/PersonalDetailsScreen";
 import LoginScreen from "./screens/LoginScreen";
 import SignUpScreen from "./screens/SignUpScreen";
 import OnboardingScreen from "./screens/OnboardingScreen";
@@ -138,6 +139,7 @@ function RootNavigator() {
             <Stack.Screen name="AddHabit" component={AddHabitScreen} />
             <Stack.Screen name="HabitDetail" component={HabitDetailScreen} />
             <Stack.Screen name="Milestones" component={MilestonesScreen} />
+            <Stack.Screen name="PersonalDetails" component={PersonalDetailsScreen} />
           </>
         ) : (
           <Stack.Screen name="Onboarding" component={OnboardingScreen} />
