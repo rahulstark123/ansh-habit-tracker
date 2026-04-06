@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ThemeSelectorSheet from "../components/ThemeSelectorSheet";
 import { useHabits } from "../context/HabitContext";
+import { useAuth } from "../context/AuthContext";
 import { useAppTheme } from "../theme";
 import { getHabitSummary } from "../utils/metrics";
 import { selectionHaptic } from "../utils/haptics";
@@ -43,6 +44,7 @@ function SettingRow({ icon, label, value, onPress, theme, showChevron = true, da
 export default function ProfileScreen({ navigation }) {
   const theme = useAppTheme();
   const { habits } = useHabits();
+  const { signOut, user } = useAuth();
   const [showThemeSheet, setShowThemeSheet] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
@@ -91,11 +93,21 @@ export default function ProfileScreen({ navigation }) {
 
         <View style={[styles.hero, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
           <View style={[styles.avatar, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-            <Text style={[styles.avatarText, { color: theme.colors.textPrimary }]}>A</Text>
+            <Text style={[styles.avatarText, { color: theme.colors.textPrimary }]}>
+              {user?.name?.charAt(0) || "U"}
+            </Text>
           </View>
           <View style={styles.heroInfo}>
-            <Text style={[styles.name, { color: theme.colors.textPrimary }]}>Ansh</Text>
-            <Text style={[styles.email, { color: theme.colors.textMuted }]}>ansh@habitflow.app</Text>
+            <Text style={[styles.name, { color: theme.colors.textPrimary }]}>{user?.name || "User"}</Text>
+            <Text style={[styles.email, { color: theme.colors.textMuted }]}>{user?.email || ""}</Text>
+            {user?.goal && (
+              <View style={styles.goalTag}>
+                <Ionicons name="compass-outline" size={10} color={theme.colors.textMuted} />
+                <Text style={[styles.goalText, { color: theme.colors.textMuted }]}>
+                  {user.goal === "build" ? "Building Habits" : user.goal === "consistent" ? "Staying Consistent" : "Improving Productivity"}
+                </Text>
+              </View>
+            )}
           </View>
           <View style={[styles.proBadge, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
             <Ionicons name="diamond-outline" size={12} color={theme.colors.textPrimary} />
@@ -178,7 +190,7 @@ export default function ProfileScreen({ navigation }) {
             label="Sign Out"
             danger
             theme={theme}
-            onPress={() => placeholderAction("Sign Out")}
+            onPress={signOut}
             showChevron={false}
           />
         </Section>
@@ -244,7 +256,19 @@ const styles = StyleSheet.create({
   },
   email: {
     fontSize: 13,
-    fontWeight: "500"
+    fontWeight: "500",
+    marginBottom: 4
+  },
+  goalTag: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4
+  },
+  goalText: {
+    fontSize: 11,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.5
   },
   proBadge: {
     borderWidth: 1,

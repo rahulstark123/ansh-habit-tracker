@@ -14,6 +14,10 @@ import WeekScreen from "./screens/WeekScreen";
 import HabitsScreen from "./screens/HabitsScreen";
 import MilestonesScreen from "./screens/MilestonesScreen";
 import ProfileScreen from "./screens/ProfileScreen";
+import LoginScreen from "./screens/LoginScreen";
+import SignUpScreen from "./screens/SignUpScreen";
+import OnboardingScreen from "./screens/OnboardingScreen";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import { getNavigationTheme, useAppTheme } from "./theme";
 
 const Stack = createNativeStackNavigator();
@@ -103,8 +107,13 @@ function MainTabs() {
 }
 
 function RootNavigator() {
+  const { isAuthenticated, isLoading, user } = useAuth();
   const theme = useAppTheme();
   const navTheme = getNavigationTheme(theme.isDark, theme.colors);
+
+  if (isLoading) {
+    return null; // Or a splash screen
+  }
 
   return (
     <NavigationContainer theme={navTheme}>
@@ -112,15 +121,27 @@ function RootNavigator() {
       <Stack.Navigator
         screenOptions={{
           headerShown: false,
+          animation: "fade",
           contentStyle: {
             backgroundColor: theme.colors.background
           }
         }}
       >
-        <Stack.Screen name="MainTabs" component={MainTabs} />
-        <Stack.Screen name="AddHabit" component={AddHabitScreen} />
-        <Stack.Screen name="HabitDetail" component={HabitDetailScreen} />
-        <Stack.Screen name="Milestones" component={MilestonesScreen} />
+        {!isAuthenticated ? (
+          <>
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="SignUp" component={SignUpScreen} />
+          </>
+        ) : user?.onboardingCompleted ? (
+          <>
+            <Stack.Screen name="MainTabs" component={MainTabs} />
+            <Stack.Screen name="AddHabit" component={AddHabitScreen} />
+            <Stack.Screen name="HabitDetail" component={HabitDetailScreen} />
+            <Stack.Screen name="Milestones" component={MilestonesScreen} />
+          </>
+        ) : (
+          <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+        )}
       </Stack.Navigator>
     </NavigationContainer>
   );
@@ -129,9 +150,11 @@ function RootNavigator() {
 export default function App() {
   return (
     <AppearanceProvider>
-      <HabitProvider>
-        <RootNavigator />
-      </HabitProvider>
+      <AuthProvider>
+        <HabitProvider>
+          <RootNavigator />
+        </HabitProvider>
+      </AuthProvider>
     </AppearanceProvider>
   );
 }

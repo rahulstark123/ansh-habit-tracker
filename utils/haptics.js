@@ -15,3 +15,17 @@ export async function successHaptic() {
     // Gracefully skip haptics on unsupported platforms.
   }
 }
+
+export async function impactHaptic(style = "medium") {
+  try {
+    const impactStyle =
+      style === "light"
+        ? Haptics.ImpactFeedbackStyle.Light
+        : style === "heavy"
+        ? Haptics.ImpactFeedbackStyle.Heavy
+        : Haptics.ImpactFeedbackStyle.Medium;
+    await Haptics.impactAsync(impactStyle);
+  } catch {
+    // Gracefully skip haptics on unsupported platforms.
+  }
+}
