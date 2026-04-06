@@ -104,14 +104,14 @@ export default function ProfileScreen({ navigation }) {
               <View style={styles.goalTag}>
                 <Ionicons name="compass-outline" size={10} color={theme.colors.textMuted} />
                 <Text style={[styles.goalText, { color: theme.colors.textMuted }]}>
-                  {user.goal === "build" ? "Building Habits" : user.goal === "consistent" ? "Staying Consistent" : "Improving Productivity"}
+                  {user.goal === "build" ? "Building Habits 🔨" : user.goal === "consistent" ? "Staying Consistent ♾️" : "Improving Productivity ⚡"}
                 </Text>
               </View>
             )}
           </View>
           <View style={[styles.proBadge, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
             <Ionicons name="diamond-outline" size={12} color={theme.colors.textPrimary} />
-            <Text style={[styles.proText, { color: theme.colors.textPrimary }]}>Pro</Text>
+            <Text style={[styles.proText, { color: theme.colors.textPrimary }]}>Pro 💎</Text>
           </View>
         </View>
 
@@ -122,7 +122,7 @@ export default function ProfileScreen({ navigation }) {
           >
             <Ionicons name="calendar-outline" size={16} color={theme.colors.textPrimary} />
             <Text style={[styles.quickValue, { color: theme.colors.textPrimary }]}>{summary.todayCompletionRate}%</Text>
-            <Text style={[styles.quickLabel, { color: theme.colors.textMuted }]}>Today Score</Text>
+            <Text style={[styles.quickLabel, { color: theme.colors.textMuted }]}>Today Score 🎯</Text>
           </Pressable>
 
           <Pressable
@@ -131,7 +131,7 @@ export default function ProfileScreen({ navigation }) {
           >
             <Ionicons name="flame-outline" size={16} color={theme.colors.textPrimary} />
             <Text style={[styles.quickValue, { color: theme.colors.textPrimary }]}>{summary.bestStreak}</Text>
-            <Text style={[styles.quickLabel, { color: theme.colors.textMuted }]}>Best Streak</Text>
+            <Text style={[styles.quickLabel, { color: theme.colors.textMuted }]}>Best Streak 🔥</Text>
           </Pressable>
         </View>
 
@@ -187,7 +187,7 @@ export default function ProfileScreen({ navigation }) {
         <Section title="Session" theme={theme}>
           <SettingRow
             icon="log-out-outline"
-            label="Sign Out"
+            label="Sign Out 👋"
             danger
             theme={theme}
             onPress={signOut}

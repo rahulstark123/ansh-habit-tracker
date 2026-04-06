@@ -20,6 +20,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../context/AuthContext";
 import { useAppTheme } from "../theme";
 import { selectionHaptic, impactHaptic } from "../utils/haptics";
+import AnshAlert from "../components/AnshAlert";
 
 const { width, height } = Dimensions.get("window");
 
@@ -28,6 +29,8 @@ export default function LoginScreen({ navigation }) {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [alert, setAlert] = useState({ visible: false, message: "", type: "error" });
+  const [errors, setErrors] = useState({ email: false, password: false });
 
   const { signIn } = useAuth();
   const theme = useAppTheme();
@@ -52,11 +55,16 @@ export default function LoginScreen({ navigation }) {
   }, []);
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      await impactHaptic("light");
+    // Check for empty fields
+    const newErrors = { email: !email.trim(), password: !password.trim() };
+    if (newErrors.email || newErrors.password) {
+      setErrors(newErrors);
+      await impactHaptic("medium");
+      setAlert({ visible: true, message: "Email and password are required. ⌨️", type: "error" });
       return;
     }
     
+    setErrors({ email: false, password: false });
     await impactHaptic("medium");
     setIsLoading(true);
     
@@ -64,7 +72,8 @@ export default function LoginScreen({ navigation }) {
     setIsLoading(false);
     
     if (!result.success) {
-      alert(result.error || "Login failed");
+      setErrors({ email: true, password: true }); 
+      setAlert({ visible: true, message: "Invalid coordinates. Check your credentials. 🛡️", type: "error" });
     }
   };
 
@@ -76,6 +85,13 @@ export default function LoginScreen({ navigation }) {
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <StatusBar barStyle={theme.isDark ? "light-content" : "dark-content"} />
+      
+      <AnshAlert 
+        visible={alert.visible} 
+        message={alert.message} 
+        type={alert.type} 
+        onClose={() => setAlert({ ...alert, visible: false })} 
+      />
       
       {/* Decorative Background Elements */}
       <View style={[styles.bgCircle, { top: -100, right: -50, backgroundColor: theme.colors.textPrimary, opacity: 0.05 }]} />
@@ -110,14 +126,17 @@ export default function LoginScreen({ navigation }) {
 
                 {/* Main Card */}
                 <View style={[styles.card, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
-                  <Text style={[styles.cardTitle, { color: theme.colors.textPrimary }]}>Welcome Back</Text>
-                  <Text style={[styles.cardSubtitle, { color: theme.colors.textMuted }]}>Sign in to continue your journey</Text>
+                  <Text style={[styles.cardTitle, { color: theme.colors.textPrimary }]}>Welcome Back 👋</Text>
+                  <Text style={[styles.cardSubtitle, { color: theme.colors.textMuted }]}>Sign in to continue your journey 🚀</Text>
 
                   <View style={styles.form}>
                     <View style={styles.inputGroup}>
                       <Text style={[styles.inputLabel, { color: theme.colors.textMuted }]}>EMAIL</Text>
-                      <View style={[styles.inputWrapper, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-                        <Ionicons name="mail-outline" size={18} color={theme.colors.textMuted} style={styles.inputIcon} />
+                      <View style={[
+                        styles.inputWrapper, 
+                        { backgroundColor: theme.colors.surface, borderColor: errors.email ? "#EF4444" : theme.colors.border }
+                      ]}>
+                        <Ionicons name="mail-outline" size={18} color={errors.email ? "#EF4444" : theme.colors.textMuted} style={styles.inputIcon} />
                         <TextInput
                           style={[styles.input, { color: theme.colors.textPrimary }]}
                           placeholder="hello@ansh.app"
@@ -125,22 +144,31 @@ export default function LoginScreen({ navigation }) {
                           keyboardType="email-address"
                           autoCapitalize="none"
                           value={email}
-                          onChangeText={setEmail}
+                          onChangeText={(text) => {
+                            setEmail(text);
+                            if (errors.email) setErrors({ ...errors, email: false });
+                          }}
                         />
                       </View>
                     </View>
 
                     <View style={styles.inputGroup}>
                       <Text style={[styles.inputLabel, { color: theme.colors.textMuted }]}>PASSWORD</Text>
-                      <View style={[styles.inputWrapper, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-                        <Ionicons name="lock-closed-outline" size={18} color={theme.colors.textMuted} style={styles.inputIcon} />
+                      <View style={[
+                        styles.inputWrapper, 
+                        { backgroundColor: theme.colors.surface, borderColor: errors.password ? "#EF4444" : theme.colors.border }
+                      ]}>
+                        <Ionicons name="lock-closed-outline" size={18} color={errors.password ? "#EF4444" : theme.colors.textMuted} style={styles.inputIcon} />
                         <TextInput
                           style={[styles.input, { color: theme.colors.textPrimary }]}
                           placeholder="••••••••"
                           placeholderTextColor={theme.colors.textMuted}
                           secureTextEntry={!showPassword}
                           value={password}
-                          onChangeText={setPassword}
+                          onChangeText={(text) => {
+                            setPassword(text);
+                            if (errors.password) setErrors({ ...errors, password: false });
+                          }}
                         />
                         <TouchableOpacity onPress={togglePassword} activeOpacity={0.6}>
                           <Ionicons 

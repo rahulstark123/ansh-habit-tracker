@@ -25,10 +25,15 @@ model Habit {
   id          String     @id @default(cuid())
   title       String
   description String?
-  icon        String?
-  color       String?
+  icon        String?    @default("star-outline")
+  color       String?    @default("#6366f1")
   frequency   String     @default("daily")
+  targetValue Int?       @default(1)
+  targetUnit  String?    @default("times")
+  reminderTime String?   // HH:mm format
+  timeOfDay    String?    @default("all") // morning, afternoon, evening
   createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
   userId      String
   user        User       @relation(fields: [userId], references: [id])
   logs        HabitLog[]

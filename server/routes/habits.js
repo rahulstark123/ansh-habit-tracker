@@ -23,7 +23,7 @@ router.get("/", async (req, res) => {
 
 // POST /api/habits - Create a new habit
 router.post("/", async (req, res) => {
-  const { title, description, icon, color, frequency } = req.body;
+  const { title, description, icon, color, frequency, targetValue, targetUnit, reminderTime, timeOfDay } = req.body;
   if (!title) return res.status(400).json({ error: "Title is required" });
 
   try {
@@ -34,6 +34,10 @@ router.post("/", async (req, res) => {
         icon,
         color,
         frequency: frequency || "daily",
+        targetValue: targetValue || 1,
+        targetUnit: targetUnit || "times",
+        reminderTime,
+        timeOfDay: timeOfDay || "all",
         userId: req.userId,
       },
     });
@@ -45,11 +49,11 @@ router.post("/", async (req, res) => {
 
 // PUT /api/habits/:id - Update a habit
 router.put("/:id", async (req, res) => {
-  const { title, description, icon, color, frequency } = req.body;
+  const { title, description, icon, color, frequency, targetValue, targetUnit, reminderTime, timeOfDay } = req.body;
   try {
     const habit = await prisma.habit.update({
       where: { id: req.params.id },
-      data: { title, description, icon, color, frequency },
+      data: { title, description, icon, color, frequency, targetValue, targetUnit, reminderTime, timeOfDay },
     });
     res.json(habit);
   } catch (err) {

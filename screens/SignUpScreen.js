@@ -19,6 +19,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../context/AuthContext";
 import { useAppTheme } from "../theme";
 import { selectionHaptic, impactHaptic } from "../utils/haptics";
+import AnshAlert from "../components/AnshAlert";
 
 const { width, height } = Dimensions.get("window");
 
@@ -29,6 +30,7 @@ export default function SignUpScreen({ navigation }) {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [alert, setAlert] = useState({ visible: false, message: "", type: "error" });
 
   const { signUp } = useAuth();
   const theme = useAppTheme();
@@ -53,15 +55,15 @@ export default function SignUpScreen({ navigation }) {
   }, []);
 
   const handleSignUp = async () => {
-    console.log("Create Account button clicked!");
-    if (!name || !email || !password || !confirmPassword) {
-      await impactHaptic("light");
+    if (!name.trim() || !email.trim() || !password || !confirmPassword) {
+      await impactHaptic("medium");
+      setAlert({ visible: true, message: "Please fill all fields to continue.", type: "error" });
       return;
     }
     
     if (password !== confirmPassword) {
       await impactHaptic("medium");
-      alert("Passwords do not match");
+      setAlert({ visible: true, message: "Passwords do not match.", type: "error" });
       return;
     }
 
@@ -72,9 +74,9 @@ export default function SignUpScreen({ navigation }) {
     setIsLoading(false);
     
     if (result.success) {
-      alert("Account created successfully! Welcome to Ansh. ✨");
+      setAlert({ visible: true, message: "Welcome to Ansh! Your account is ready. ✨", type: "success" });
     } else {
-      alert(result.error || "Sign-up failed");
+      setAlert({ visible: true, message: result.error || "Sign-up failed.", type: "error" });
     }
   };
 
@@ -91,6 +93,13 @@ export default function SignUpScreen({ navigation }) {
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <StatusBar barStyle={theme.isDark ? "light-content" : "dark-content"} />
+      
+      <AnshAlert 
+        visible={alert.visible} 
+        message={alert.message} 
+        type={alert.type} 
+        onClose={() => setAlert({ ...alert, visible: false })} 
+      />
       
       {/* Decorative Background Elements */}
       <View style={[styles.bgCircle, { top: -80, left: -40, backgroundColor: "#6366f1", opacity: 0.05 }]} />

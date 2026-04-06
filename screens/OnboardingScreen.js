@@ -19,22 +19,22 @@ import { selectionHaptic, impactHaptic } from "../utils/haptics";
 const { width, height } = Dimensions.get("window");
 
 const GOAL_OPTIONS = [
-  { id: "build", label: "Build habits", icon: "hammer-outline" },
-  { id: "consistent", label: "Stay consistent", icon: "infinite-outline" },
-  { id: "productivity", label: "Improve productivity", icon: "flash-outline" },
+  { id: "build", label: "Build habits 🔨", icon: "hammer-outline" },
+  { id: "consistent", label: "Stay consistent ♾️", icon: "infinite-outline" },
+  { id: "productivity", label: "Boost productivity ⚡", icon: "flash-outline" },
 ];
 
 const LEVEL_OPTIONS = [
-  { id: "beginner", label: "Beginner", sub: "I'm just starting out", icon: "seedling-outline" },
-  { id: "intermediate", label: "Intermediate", sub: "I have some habits", icon: "leaf-outline" },
-  { id: "master", label: "Master", sub: "I want to optimize", icon: "trophy-outline" },
+  { id: "beginner", label: "Beginner 🌱", sub: "I'm just starting out", icon: "seedling-outline" },
+  { id: "intermediate", label: "Intermediate 🌿", sub: "I have some habits", icon: "leaf-outline" },
+  { id: "master", label: "Master 🏆", sub: "I want to optimize", icon: "trophy-outline" },
 ];
 
 const TIME_OPTIONS = [
-  { id: "morning", label: "Morning", icon: "sunny-outline" },
-  { id: "afternoon", label: "Afternoon", icon: "partly-sunny-outline" },
-  { id: "evening", label: "Evening", icon: "moon-outline" },
-  { id: "all", label: "All Day", icon: "time-outline" },
+  { id: "morning", label: "Morning 🌅", icon: "sunny-outline" },
+  { id: "afternoon", label: "Afternoon ☀️", icon: "partly-sunny-outline" },
+  { id: "evening", label: "Evening 🌕", icon: "moon-outline" },
+  { id: "all", label: "All Day 🕒", icon: "time-outline" },
 ];
 
 export default function OnboardingScreen() {
@@ -114,7 +114,7 @@ export default function OnboardingScreen() {
             <View style={[styles.iconCircle, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
               <Ionicons name="sparkles" size={40} color={theme.colors.textPrimary} />
             </View>
-            <Text style={[styles.title, { color: theme.colors.textPrimary }]}>Welcome to Ansh.</Text>
+            <Text style={[styles.title, { color: theme.colors.textPrimary }]}>Welcome to Ansh ✨</Text>
             <Text style={[styles.subtitle, { color: theme.colors.textMuted }]}>
               Build better habits. One day at a time.
             </Text>
@@ -126,7 +126,7 @@ export default function OnboardingScreen() {
             <View style={[styles.iconCircle, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
               <Ionicons name="person-outline" size={40} color={theme.colors.textPrimary} />
             </View>
-            <Text style={[styles.title, { color: theme.colors.textPrimary }]}>Let’s get to know you.</Text>
+            <Text style={[styles.title, { color: theme.colors.textPrimary }]}>Let’s get to know you 👋</Text>
             <Text style={[styles.subtitle, { color: theme.colors.textMuted }]}>
               Everything in Ansh is personalized for you, {user?.name || "there"}.
             </Text>
@@ -136,7 +136,7 @@ export default function OnboardingScreen() {
         return (
           <View style={styles.stepContainer}>
             <Text style={[styles.title, { color: theme.colors.textPrimary, textAlign: "left", alignSelf: "flex-start" }]}>
-              What do you want to achieve?
+              What do you want to achieve? 🎯
             </Text>
             <View style={styles.optionsGrid}>
               {GOAL_OPTIONS.map((goal) => (
