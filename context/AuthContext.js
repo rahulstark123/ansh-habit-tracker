@@ -63,7 +63,16 @@ export const AuthProvider = ({ children }) => {
         
         if (token) {
           setIsAuthenticated(true);
-          if (userData) setUser(JSON.parse(userData));
+          if (userData) {
+            try {
+              setUser(JSON.parse(userData));
+            } catch (err) {
+              console.error("FAILED TO PARSE STORED USER DATA:", userData);
+              await safeStorage.removeItem("user_data");
+              await safeStorage.removeItem("user_token");
+              setIsAuthenticated(false);
+            }
+          }
         }
       } catch (e) {
         console.error("Failed to load auth state", e);
@@ -83,9 +92,17 @@ export const AuthProvider = ({ children }) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-      const data = await response.json();
-      console.log("Sign in response:", data);
+      
+      const text = await response.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (err) {
+        console.error("SERVER RETURNED NON-JSON:", text);
+        return { success: false, error: "Server returned a non-JSON response. Check logs." };
+      }
 
+      console.log("Sign in response:", data);
       if (!response.ok) return { success: false, error: data.error };
 
       await safeStorage.setItem("user_token", data.token);
