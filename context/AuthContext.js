@@ -125,6 +125,12 @@ export const AuthProvider = ({ children }) => {
 
   const signOut = async () => {
     try {
+      const token = await safeStorage.getItem("user_token");
+      await fetch(`${API_URL}/auth/signout`, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${token}` },
+      });
+      
       await safeStorage.removeItem("user_token");
       await safeStorage.removeItem("user_data");
       setUser(null);

@@ -116,4 +116,10 @@ router.put("/onboarding", authMiddleware, async (req, res) => {
   }
 });
 
+// POST /api/auth/signout
+router.post("/signout", authMiddleware, async (req, res) => {
+  // Statelenss JWT logout just confirms session end
+  res.json({ success: true, message: "Logged out successfully" });
+});
+
 module.exports = router;

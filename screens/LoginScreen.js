@@ -176,25 +176,6 @@ export default function LoginScreen({ navigation }) {
                   </View>
                 </View>
 
-                {/* Social Login */}
-                <View style={styles.socialSection}>
-                  <View style={styles.dividerRow}>
-                    <View style={[styles.dividerLine, { backgroundColor: theme.colors.border }]} />
-                    <Text style={[styles.dividerText, { color: theme.colors.textMuted }]}>OR CONTINUE WITH</Text>
-                    <View style={[styles.dividerLine, { backgroundColor: theme.colors.border }]} />
-                  </View>
-
-                  <View style={styles.socialRow}>
-                    <TouchableOpacity 
-                      style={[styles.socialButton, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border, opacity: 0.5 }]}
-                      activeOpacity={1}
-                      onPress={() => alert("Google Sign-In is coming soon!")}
-                    >
-                      <Ionicons name="logo-google" size={24} color={theme.colors.textPrimary} />
-                      <Text style={[styles.socialButtonText, { color: theme.colors.textPrimary }]}>Continue with Google</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
 
                 <View style={styles.footer}>
                   <Text style={[styles.footerText, { color: theme.colors.textMuted }]}>
@@ -340,43 +321,6 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: "800",
     letterSpacing: 0.5,
-  },
-  socialSection: {
-    marginTop: 32,
-  },
-  dividerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 24,
-    gap: 12,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    opacity: 0.5,
-  },
-  dividerText: {
-    fontSize: 10,
-    fontWeight: "800",
-    letterSpacing: 1.2,
-  },
-  socialRow: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  socialButton: {
-    flex: 1,
-    height: 56,
-    borderRadius: 18,
-    borderWidth: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-  },
-  socialButtonText: {
-    fontSize: 15,
-    fontWeight: "700",
   },
   footer: {
     alignItems: "center",
