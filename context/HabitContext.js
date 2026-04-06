@@ -121,6 +121,28 @@ export function HabitProvider({ children }) {
     }
   };
 
+  const updateHabit = async (habitId, habitData) => {
+    try {
+      const token = await safeStorage.getItem("user_token");
+      const response = await fetch(`${API_URL}/habits/${habitId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(habitData),
+      });
+      const updatedHabit = await response.json();
+      if (response.ok) {
+        setHabits((prev) => prev.map((h) => (h.id === habitId ? updatedHabit : h)));
+        return { success: true };
+      }
+      return { success: false, error: updatedHabit.error };
+    } catch (err) {
+      return { success: false, error: "Network error" };
+    }
+  };
+
   const value = useMemo(
     () => ({
       habits,
@@ -128,6 +150,7 @@ export function HabitProvider({ children }) {
       addHabit,
       toggleHabit,
       deleteHabit,
+      updateHabit,
       refreshHabits: fetchHabits,
       getHabitById: (id) => habits.find((h) => h.id === id),
     }),

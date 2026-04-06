@@ -78,7 +78,7 @@ export default function AddHabitScreen({ navigation }) {
           <View style={[styles.preview, { backgroundColor: selectedColor + "15", borderColor: selectedColor }]}>
             <Ionicons name={selectedIcon} size={30} color={selectedColor} />
             <Text style={[styles.previewText, { color: selectedColor }]}>
-              {title || "Morning Ritual ✨"}
+              {title || "Morning Habit ✨"}
             </Text>
           </View>
 

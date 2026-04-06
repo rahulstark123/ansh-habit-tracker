@@ -9,12 +9,15 @@ import { HabitProvider } from "./context/HabitContext";
 import HomeScreen from "./screens/HomeScreen";
 import AddHabitScreen from "./screens/AddHabitScreen";
 import HabitDetailScreen from "./screens/HabitDetailScreen";
+import EditHabitScreen from "./screens/EditHabitScreen";
 import InsightsScreen from "./screens/InsightsScreen";
 import WeekScreen from "./screens/WeekScreen";
 import HabitsScreen from "./screens/HabitsScreen";
 import MilestonesScreen from "./screens/MilestonesScreen";
 import ProfileScreen from "./screens/ProfileScreen";
+import FeedbackScreen from "./screens/FeedbackScreen";
 import PersonalDetailsScreen from "./screens/PersonalDetailsScreen";
+import SecurityScreen from "./screens/SecurityScreen";
 import LoginScreen from "./screens/LoginScreen";
 import SignUpScreen from "./screens/SignUpScreen";
 import OnboardingScreen from "./screens/OnboardingScreen";
@@ -138,8 +141,11 @@ function RootNavigator() {
             <Stack.Screen name="MainTabs" component={MainTabs} />
             <Stack.Screen name="AddHabit" component={AddHabitScreen} />
             <Stack.Screen name="HabitDetail" component={HabitDetailScreen} />
+            <Stack.Screen name="EditHabit" component={EditHabitScreen} />
             <Stack.Screen name="Milestones" component={MilestonesScreen} />
             <Stack.Screen name="PersonalDetails" component={PersonalDetailsScreen} />
+            <Stack.Screen name="Feedback" component={FeedbackScreen} />
+            <Stack.Screen name="Security" component={SecurityScreen} />
           </>
         ) : (
           <Stack.Screen name="Onboarding" component={OnboardingScreen} />

@@ -58,7 +58,7 @@ export default function HomeScreen({ navigation }) {
     return [
       { id: "morning", title: "Morning Routine 🌅", data: morning },
       { id: "afternoon", title: "Afternoon Focus ☀️", data: afternoon },
-      { id: "evening", title: "Evening Ritual 🌕", data: evening },
+      { id: "evening", title: "Evening Habit 🌕", data: evening },
       { id: "all", title: "All Day ✨", data: others },
     ].filter(group => group.data.length > 0);
   };

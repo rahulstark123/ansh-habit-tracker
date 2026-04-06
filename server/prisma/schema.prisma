@@ -15,10 +15,13 @@ model User {
   goal                String?
   level               String?
   focusTime           String?
+  masteryTier         String?  @default("Rookie 🌱")
+  bestStreak          Int      @default(0)
   remindersEnabled    Boolean  @default(false)
   onboardingCompleted Boolean  @default(false)
   createdAt           DateTime @default(now())
   habits              Habit[]
+  achievements        Achievement[]
 }
 
 model Habit {
@@ -45,4 +48,12 @@ model HabitLog {
   completed Boolean  @default(false)
   habitId   String
   habit     Habit    @relation(fields: [habitId], references: [id])
+}
+
+model Achievement {
+  id        String   @id @default(cuid())
+  name      String   // Rookie, Master, etc.
+  date      DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
 }

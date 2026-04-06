@@ -1,15 +1,35 @@
-import { StyleSheet, Text, View } from "react-native";
+import React, { useState } from "react";
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Modal } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useHabits } from "../context/HabitContext";
 import { useAppTheme } from "../theme";
+import { selectionHaptic } from "../utils/haptics";
 
-export default function HabitDetailScreen({ route }) {
+export default function HabitDetailScreen({ route, navigation }) {
   const { habitId } = route.params;
   const theme = useAppTheme();
-  const { getHabitById } = useHabits();
+  const { getHabitById, deleteHabit } = useHabits();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const habit = getHabitById(habitId);
+
+  const handleDelete = async () => {
+    await selectionHaptic();
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    await selectionHaptic();
+    setShowDeleteModal(false);
+    await deleteHabit(habitId);
+    navigation.goBack();
+  };
+
+  const handleEdit = async () => {
+    await selectionHaptic();
+    navigation.navigate("EditHabit", { habitId });
+  };
 
   if (!habit) {
     return (
@@ -21,106 +41,285 @@ export default function HabitDetailScreen({ route }) {
     );
   }
 
-  const completionRate = Math.round((habit.completedCount / habit.totalCount) * 100);
+  const completionRate = habit.totalCount > 0 ? Math.round((habit.completedCount / habit.totalCount) * 100) : 0;
+  const habitTitle = habit.title || habit.name || "Untitled Habit";
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
-      <View style={styles.content}>
-        <Text style={[theme.typography.heading, { color: theme.colors.textPrimary }]}>{habit.name}</Text>
-        <Text style={[styles.frequency, { color: theme.colors.textSecondary }]}>{habit.frequency}</Text>
-
-        <View style={[styles.heroCard, { backgroundColor: theme.colors.card }]}>
-          <View style={styles.heroHeader}>
-            <Ionicons name="flame-outline" size={15} color={theme.colors.textSecondary} />
-            <Text style={[styles.heroLabel, { color: theme.colors.textSecondary }]}>Current Streak</Text>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <SafeAreaView style={{ flex: 1 }}>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+              <Ionicons name="chevron-back" size={28} color={theme.colors.textPrimary} />
+            </TouchableOpacity>
+            <Text style={[styles.title, { color: theme.colors.textPrimary }]}>Habit Depth 🧬</Text>
+            <TouchableOpacity onPress={handleEdit} style={styles.editButton}>
+              <Ionicons name="create-outline" size={24} color={theme.colors.textPrimary} />
+            </TouchableOpacity>
           </View>
-          <Text style={[styles.heroValue, { color: theme.colors.textPrimary }]}>🔥 {habit.streak} days</Text>
-        </View>
 
-        <View style={styles.statsGrid}>
-          <View style={[styles.statCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-            <View style={styles.statHeader}>
-              <Ionicons name="pie-chart-outline" size={14} color={theme.colors.textSecondary} />
-              <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>Completion Rate</Text>
+          <View style={styles.content}>
+            <View style={[styles.mainCard, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
+              <Text style={[styles.habitName, { color: theme.colors.textPrimary }]}>{habitTitle}</Text>
+              <Text style={[styles.habitFreq, { color: theme.colors.textMuted }]}>{habit.frequency} • {habit.days?.length} Days/Week</Text>
+              {habit.description ? (
+                <Text style={[styles.habitDesc, { color: theme.colors.textMuted }]}>{habit.description}</Text>
+              ) : null}
             </View>
-            <Text style={[styles.statValue, { color: theme.colors.textPrimary }]}>{completionRate}%</Text>
-          </View>
 
-          <View style={[styles.statCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-            <View style={styles.statHeader}>
-              <Ionicons name="checkmark-done-outline" size={14} color={theme.colors.textSecondary} />
-              <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>Completions</Text>
+            <View style={styles.statsGrid}>
+              <View style={[styles.statBox, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+                <Ionicons name="flame" size={20} color="#f59e0b" />
+                <Text style={[styles.statVal, { color: theme.colors.textPrimary }]}>{habit.streak}</Text>
+                <Text style={[styles.statLab, { color: theme.colors.textMuted }]}>BEST STREAK</Text>
+              </View>
+              <View style={[styles.statBox, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+                <Ionicons name="pie-chart" size={20} color="#10b981" />
+                <Text style={[styles.statVal, { color: theme.colors.textPrimary }]}>{completionRate}%</Text>
+                <Text style={[styles.statLab, { color: theme.colors.textMuted }]}>CONSISTENCY</Text>
+              </View>
             </View>
-            <Text style={[styles.statValue, { color: theme.colors.textPrimary }]}>{habit.completedCount}</Text>
+
+            <View style={[styles.actionCard, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
+              <Text style={[styles.actionTitle, { color: theme.colors.textPrimary }]}>Habit Management</Text>
+              <Text style={[styles.actionDesc, { color: theme.colors.textMuted }]}>Adjust your goals or remove this habit from your library.</Text>
+              
+              <View style={styles.btnRow}>
+                <TouchableOpacity
+                  onPress={handleEdit}
+                  style={[styles.actionBtn, { backgroundColor: theme.colors.textPrimary }]}
+                >
+                  <Text style={[styles.actionBtnText, { color: theme.colors.background }]}>Edit Habit</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  onPress={handleDelete}
+                  style={[styles.deleteBtn, { borderColor: theme.colors.border }]}
+                >
+                  <Ionicons name="trash-outline" size={20} color="#ef4444" />
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
-        </View>
-      </View>
-    </SafeAreaView>
+        </ScrollView>
+
+        <Modal visible={showDeleteModal} transparent animationType="fade" onRequestClose={() => setShowDeleteModal(false)}>
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalCard, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
+              <View style={styles.modalIconWrap}>
+                <Ionicons name="trash-outline" size={20} color="#ef4444" />
+              </View>
+              <Text style={[styles.modalTitle, { color: theme.colors.textPrimary }]}>Delete Habit?</Text>
+              <Text style={[styles.modalDesc, { color: theme.colors.textMuted }]}>
+                This will remove this habit and its momentum history from your library.
+              </Text>
+              <View style={styles.modalBtnRow}>
+                <TouchableOpacity
+                  onPress={() => setShowDeleteModal(false)}
+                  style={[styles.modalBtnSecondary, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
+                >
+                  <Text style={[styles.modalBtnSecondaryText, { color: theme.colors.textPrimary }]}>Keep It</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={confirmDelete} style={styles.modalBtnDanger}>
+                  <Text style={styles.modalBtnDangerText}>Delete</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1
+  container: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 40,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    paddingBottom: 24,
+  },
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 15,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: "900",
+  },
+  editButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 15,
+    alignItems: "center",
+    justifyContent: "center",
   },
   content: {
-    flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 8
   },
-  frequency: {
-    marginTop: 8,
-    fontSize: 15,
-    fontWeight: "500"
+  mainCard: {
+    padding: 24,
+    borderRadius: 32,
+    borderWidth: 1.5,
+    marginBottom: 20,
   },
-  heroCard: {
-    borderRadius: 12,
-    padding: 18,
-    marginTop: 26
-  },
-  heroLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-    marginBottom: 0
-  },
-  heroHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginBottom: 8
-  },
-  heroValue: {
+  habitName: {
     fontSize: 28,
+    fontWeight: "900",
+    letterSpacing: -0.5,
+    marginBottom: 4,
+  },
+  habitFreq: {
+    fontSize: 14,
     fontWeight: "700",
-    letterSpacing: -0.4
+    marginBottom: 12,
+  },
+  habitDesc: {
+    fontSize: 15,
+    fontWeight: "500",
+    lineHeight: 22,
   },
   statsGrid: {
-    marginTop: 14,
-    gap: 12
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 20,
   },
-  statCard: {
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: 16
+  statBox: {
+    flex: 1,
+    padding: 20,
+    borderRadius: 24,
+    borderWidth: 1.5,
+    alignItems: "center",
+    gap: 8,
   },
-  statLabel: {
+  statVal: {
+    fontSize: 20,
+    fontWeight: "900",
+  },
+  statLab: {
+    fontSize: 9,
+    fontWeight: "900",
+    letterSpacing: 1,
+  },
+  actionCard: {
+    padding: 24,
+    borderRadius: 32,
+    borderWidth: 1.5,
+    marginTop: 20,
+  },
+  actionTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    marginBottom: 4,
+  },
+  actionDesc: {
+    fontSize: 13,
+    fontWeight: "600",
+    marginBottom: 24,
+  },
+  btnRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  actionBtn: {
+    flex: 1,
+    height: 56,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  actionBtnText: {
+    fontSize: 16,
+    fontWeight: "900",
+  },
+  deleteBtn: {
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    borderWidth: 1.5,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 24,
+  },
+  modalCard: {
+    width: "100%",
+    borderRadius: 28,
+    borderWidth: 1.5,
+    padding: 22,
+    alignItems: "center",
+  },
+  modalIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#ef444420",
+    marginBottom: 12,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: "900",
+    marginBottom: 8,
+  },
+  modalDesc: {
     fontSize: 14,
     fontWeight: "600",
-    marginBottom: 0
+    textAlign: "center",
+    lineHeight: 20,
+    marginBottom: 20,
   },
-  statHeader: {
+  modalBtnRow: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginBottom: 8
+    gap: 10,
+    width: "100%",
   },
-  statValue: {
-    fontSize: 24,
-    fontWeight: "700",
-    letterSpacing: -0.2
+  modalBtnSecondary: {
+    flex: 1,
+    height: 52,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalBtnSecondaryText: {
+    fontSize: 15,
+    fontWeight: "800",
+  },
+  modalBtnDanger: {
+    flex: 1,
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: "#ef4444",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalBtnDangerText: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: "#fff",
   },
   notFound: {
     fontSize: 16,
-    fontWeight: "500"
-  }
+    fontWeight: "600",
+    textAlign: "center",
+    marginTop: 100,
+  },
 });
