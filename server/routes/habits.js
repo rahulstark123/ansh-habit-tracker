@@ -59,6 +59,15 @@ function withDerivedMetrics(habit) {
   };
 }
 
+function shouldRetryWithoutReminderRepeat(err) {
+  const msg = err?.message || "";
+  return (
+    err?.code === "P2022" ||
+    msg.includes("reminderRepeat") ||
+    msg.includes("Unknown argument")
+  );
+}
+
 // GET /api/habits - Get all habits for logged-in user
 router.get("/", async (req, res) => {
   try {
@@ -78,24 +87,34 @@ router.post("/", async (req, res) => {
   const { title, description, icon, color, frequency, targetValue, targetUnit, reminderTime, reminderRepeat, timeOfDay } = req.body;
   if (!title) return res.status(400).json({ error: "Title is required" });
 
+  const data = {
+    title,
+    description,
+    icon,
+    color,
+    frequency: frequency || "daily",
+    targetValue: targetValue || 1,
+    targetUnit: targetUnit || "times",
+    reminderTime,
+    reminderRepeat: reminderTime ? (reminderRepeat || "daily") : null,
+    timeOfDay: timeOfDay || "all",
+    userId: req.userId,
+  };
+
   try {
     const habit = await prisma.habit.create({
-      data: {
-        title,
-        description,
-        icon,
-        color,
-        frequency: frequency || "daily",
-        targetValue: targetValue || 1,
-        targetUnit: targetUnit || "times",
-        reminderTime,
-        reminderRepeat: reminderRepeat || "daily",
-        timeOfDay: timeOfDay || "all",
-        userId: req.userId,
-      },
+      data,
     });
     res.status(201).json(habit);
   } catch (err) {
+    if (shouldRetryWithoutReminderRepeat(err)) {
+      try {
+        const { reminderRepeat: _ignore, ...fallbackData } = data;
+        const habit = await prisma.habit.create({ data: fallbackData });
+        return res.status(201).json(habit);
+      } catch (fallbackErr) {}
+    }
+    console.error("POST /habits failed:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
@@ -103,13 +122,36 @@ router.post("/", async (req, res) => {
 // PUT /api/habits/:id - Update a habit
 router.put("/:id", async (req, res) => {
   const { title, description, icon, color, frequency, targetValue, targetUnit, reminderTime, reminderRepeat, timeOfDay } = req.body;
+  const data = {
+    title,
+    description,
+    icon,
+    color,
+    frequency,
+    targetValue,
+    targetUnit,
+    reminderTime,
+    reminderRepeat: reminderTime ? (reminderRepeat || "daily") : null,
+    timeOfDay,
+  };
   try {
     const habit = await prisma.habit.update({
       where: { id: req.params.id },
-      data: { title, description, icon, color, frequency, targetValue, targetUnit, reminderTime, reminderRepeat, timeOfDay },
+      data,
     });
     res.json(habit);
   } catch (err) {
+    if (shouldRetryWithoutReminderRepeat(err)) {
+      try {
+        const { reminderRepeat: _ignore, ...fallbackData } = data;
+        const habit = await prisma.habit.update({
+          where: { id: req.params.id },
+          data: fallbackData,
+        });
+        return res.json(habit);
+      } catch (fallbackErr) {}
+    }
+    console.error("PUT /habits/:id failed:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
