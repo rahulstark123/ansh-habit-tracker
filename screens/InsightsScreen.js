@@ -67,6 +67,10 @@ export default function InsightsScreen() {
   const todayPoint = stats.series[stats.series.length - 1];
   const todayRate = todayPoint && todayPoint.total > 0 ? Math.round((todayPoint.value / todayPoint.total) * 100) : 0;
   const bestRate = stats.bestPoint && stats.bestPoint.total > 0 ? Math.round((stats.bestPoint.value / stats.bestPoint.total) * 100) : 0;
+  const todayLabel = useMemo(
+    () => new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" }).toUpperCase(),
+    []
+  );
 
   const handleRangeChange = async (r) => {
     await selectionHaptic();
@@ -75,7 +79,7 @@ export default function InsightsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <SafeAreaView style={{ flex: 1 }}>
+      <SafeAreaView edges={["top", "left", "right"]} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           <Text style={[styles.title, { color: theme.colors.textPrimary }]}>Insights 📈</Text>
           <Text style={[styles.subtitle, { color: theme.colors.textMuted }]}>Deep dive into your behavioral patterns.</Text>
@@ -139,7 +143,7 @@ export default function InsightsScreen() {
             <View style={[styles.miniCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
               <View style={styles.miniHeader}>
                 <Ionicons name="today-outline" size={15} color={theme.colors.textMuted} />
-                <Text style={[styles.miniTitle, { color: theme.colors.textMuted }]}>TODAY</Text>
+                <Text style={[styles.miniTitle, { color: theme.colors.textMuted }]}>{todayLabel}</Text>
               </View>
               <PieChart percent={todayRate} />
             </View>

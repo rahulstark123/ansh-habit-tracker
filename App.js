@@ -3,6 +3,8 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
+import { View } from "react-native";
+import * as Notifications from "expo-notifications";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppearanceProvider } from "./context/AppearanceContext";
 import { HabitProvider } from "./context/HabitContext";
@@ -27,6 +29,14 @@ import { getNavigationTheme, useAppTheme } from "./theme";
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
+
 function MainTabs() {
   const theme = useAppTheme();
   const insets = useSafeAreaInsets();
@@ -36,6 +46,9 @@ function MainTabs() {
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: true,
+        sceneStyle: {
+          backgroundColor: theme.colors.background
+        },
         tabBarStyle: {
           backgroundColor: theme.colors.card,
           borderTopColor: theme.colors.border,
@@ -116,42 +129,44 @@ function RootNavigator() {
   const navTheme = getNavigationTheme(theme.isDark, theme.colors);
 
   if (isLoading) {
-    return null; // Or a splash screen
+    return <View style={{ flex: 1, backgroundColor: theme.colors.background }} />;
   }
 
   return (
-    <NavigationContainer theme={navTheme}>
-      <StatusBar style={theme.isDark ? "light" : "dark"} />
-      <Stack.Navigator
-        screenOptions={{
-          headerShown: false,
-          animation: "fade",
-          contentStyle: {
-            backgroundColor: theme.colors.background
-          }
-        }}
-      >
-        {!isAuthenticated ? (
-          <>
-            <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="SignUp" component={SignUpScreen} />
-          </>
-        ) : user?.onboardingCompleted ? (
-          <>
-            <Stack.Screen name="MainTabs" component={MainTabs} />
-            <Stack.Screen name="AddHabit" component={AddHabitScreen} />
-            <Stack.Screen name="HabitDetail" component={HabitDetailScreen} />
-            <Stack.Screen name="EditHabit" component={EditHabitScreen} />
-            <Stack.Screen name="Milestones" component={MilestonesScreen} />
-            <Stack.Screen name="PersonalDetails" component={PersonalDetailsScreen} />
-            <Stack.Screen name="Feedback" component={FeedbackScreen} />
-            <Stack.Screen name="Security" component={SecurityScreen} />
-          </>
-        ) : (
-          <Stack.Screen name="Onboarding" component={OnboardingScreen} />
-        )}
-      </Stack.Navigator>
-    </NavigationContainer>
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <NavigationContainer theme={navTheme}>
+        <StatusBar style={theme.isDark ? "light" : "dark"} />
+        <Stack.Navigator
+          screenOptions={{
+            headerShown: false,
+            animation: "none",
+            contentStyle: {
+              backgroundColor: theme.colors.background
+            }
+          }}
+        >
+          {!isAuthenticated ? (
+            <>
+              <Stack.Screen name="Login" component={LoginScreen} />
+              <Stack.Screen name="SignUp" component={SignUpScreen} />
+            </>
+          ) : user?.onboardingCompleted ? (
+            <>
+              <Stack.Screen name="MainTabs" component={MainTabs} />
+              <Stack.Screen name="AddHabit" component={AddHabitScreen} />
+              <Stack.Screen name="HabitDetail" component={HabitDetailScreen} />
+              <Stack.Screen name="EditHabit" component={EditHabitScreen} />
+              <Stack.Screen name="Milestones" component={MilestonesScreen} />
+              <Stack.Screen name="PersonalDetails" component={PersonalDetailsScreen} />
+              <Stack.Screen name="Feedback" component={FeedbackScreen} />
+              <Stack.Screen name="Security" component={SecurityScreen} />
+            </>
+          ) : (
+            <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+          )}
+        </Stack.Navigator>
+      </NavigationContainer>
+    </View>
   );
 }
 

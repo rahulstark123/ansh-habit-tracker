@@ -43,6 +43,14 @@ export default function HabitDetailScreen({ route, navigation }) {
 
   const completionRate = habit.totalCount > 0 ? Math.round((habit.completedCount / habit.totalCount) * 100) : 0;
   const habitTitle = habit.title || habit.name || "Untitled Habit";
+  const habitFrequency = `${habit.frequency || "daily"}`.replace(/^\w/, (c) => c.toUpperCase());
+  const habitIcon = habit.icon || "star-outline";
+  const habitColor = habit.color || theme.colors.textPrimary;
+  const targetValue = habit.targetValue || habit.target || 1;
+  const targetUnit = habit.targetUnit || "times";
+  const routine = habit.timeOfDay ? `${habit.timeOfDay}`.replace(/^\w/, (c) => c.toUpperCase()) : "All";
+  const reminderLabel = habit.reminderTime ? habit.reminderTime : "Off";
+  const reminderRepeat = habit.reminderRepeat === "once" ? "Once" : "Daily";
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -60,8 +68,34 @@ export default function HabitDetailScreen({ route, navigation }) {
 
           <View style={styles.content}>
             <View style={[styles.mainCard, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
-              <Text style={[styles.habitName, { color: theme.colors.textPrimary }]}>{habitTitle}</Text>
-              <Text style={[styles.habitFreq, { color: theme.colors.textMuted }]}>{habit.frequency} • {habit.days?.length} Days/Week</Text>
+              <View style={styles.titleRow}>
+                <View style={[styles.iconBadge, { backgroundColor: habitColor + "20" }]}>
+                  <Ionicons name={habitIcon} size={18} color={habitColor} />
+                </View>
+                <View style={styles.titleTextWrap}>
+                  <Text style={[styles.habitName, { color: theme.colors.textPrimary }]}>{habitTitle}</Text>
+                  <Text style={[styles.habitFreq, { color: theme.colors.textMuted }]}>{habitFrequency} habit</Text>
+                </View>
+              </View>
+
+              <View style={styles.metaGrid}>
+                <View style={[styles.metaPill, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+                  <Ionicons name="flag-outline" size={14} color={theme.colors.textMuted} />
+                  <Text style={[styles.metaText, { color: theme.colors.textPrimary }]}>
+                    {targetValue} {targetUnit}
+                  </Text>
+                </View>
+                <View style={[styles.metaPill, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+                  <Ionicons name="sunny-outline" size={14} color={theme.colors.textMuted} />
+                  <Text style={[styles.metaText, { color: theme.colors.textPrimary }]}>{routine}</Text>
+                </View>
+                <View style={[styles.metaPill, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+                  <Ionicons name="alarm-outline" size={14} color={theme.colors.textMuted} />
+                  <Text style={[styles.metaText, { color: theme.colors.textPrimary }]}>
+                    {reminderLabel === "Off" ? "Off" : `${reminderLabel} (${reminderRepeat})`}
+                  </Text>
+                </View>
+              </View>
               {habit.description ? (
                 <Text style={[styles.habitDesc, { color: theme.colors.textMuted }]}>{habit.description}</Text>
               ) : null}
@@ -175,15 +209,49 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   habitName: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: "900",
     letterSpacing: -0.5,
-    marginBottom: 4,
   },
   habitFreq: {
     fontSize: 14,
     fontWeight: "700",
+  },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 14,
+  },
+  iconBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  titleTextWrap: {
+    flex: 1,
+    gap: 2,
+  },
+  metaGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
     marginBottom: 12,
+  },
+  metaPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    borderWidth: 1.5,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  metaText: {
+    fontSize: 12,
+    fontWeight: "800",
   },
   habitDesc: {
     fontSize: 15,

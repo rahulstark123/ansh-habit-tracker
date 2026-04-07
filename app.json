@@ -5,15 +5,18 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
+    "backgroundColor": "#0b1020",
     "assetBundlePatterns": [
       "**/*"
     ],
     "android": {
       "package": "com.ansh.habittracker",
-      "googleServicesFile": "./google-services.json"
+      "backgroundColor": "#0b1020"
     },
     "plugins": [
-      "@react-native-google-signin/google-signin"
+      "@react-native-google-signin/google-signin",
+      "@react-native-community/datetimepicker",
+      "expo-notifications"
     ]
   }
 }

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useMemo } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "./AuthContext";
+import { clearHabitReminder, upsertHabitReminder } from "../utils/reminders";
 
 const HabitContext = createContext(null);
 
@@ -70,7 +71,8 @@ export function HabitProvider({ children }) {
       const newHabit = await response.json();
       if (response.ok) {
         setHabits((prev) => [newHabit, ...prev]);
-        return { success: true };
+        await upsertHabitReminder(newHabit);
+        return { success: true, habit: newHabit };
       }
       return { success: false, error: newHabit.error };
     } catch (err) {
@@ -98,7 +100,11 @@ export function HabitProvider({ children }) {
 
       if (!response.ok) {
         setHabits(originalHabits); // Rollback on error
+        return;
       }
+
+      // Pull canonical data after server write so Home screen stays in sync.
+      await fetchHabits();
     } catch (err) {
       console.error("Failed to toggle habit:", err);
     }
@@ -115,6 +121,7 @@ export function HabitProvider({ children }) {
       });
       if (response.ok) {
         setHabits((prev) => prev.filter((h) => h.id !== habitId));
+        await clearHabitReminder(habitId);
       }
     } catch (err) {
       console.error("Failed to delete habit:", err);
@@ -135,7 +142,8 @@ export function HabitProvider({ children }) {
       const updatedHabit = await response.json();
       if (response.ok) {
         setHabits((prev) => prev.map((h) => (h.id === habitId ? updatedHabit : h)));
-        return { success: true };
+        await upsertHabitReminder(updatedHabit);
+        return { success: true, habit: updatedHabit };
       }
       return { success: false, error: updatedHabit.error };
     } catch (err) {

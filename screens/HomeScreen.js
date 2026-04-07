@@ -5,10 +5,7 @@ import {
   StyleSheet,
   Text,
   View,
-  Dimensions,
-  Animated,
   StatusBar,
-  ScrollView,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -21,13 +18,11 @@ import { getHabitSummary } from "../utils/metrics";
 import { getQuoteOfTheDay } from "../utils/dailyQuote";
 import { selectionHaptic } from "../utils/haptics";
 
-const { width } = Dimensions.get("window");
-
 const FILTERS = ["All", "Pending", "Done"];
 
 export default function HomeScreen({ navigation }) {
   const theme = useAppTheme();
-  const { habits, toggleHabit, loading } = useHabits();
+  const { habits, toggleHabit } = useHabits();
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const [filter, setFilter] = useState("All");
@@ -87,68 +82,85 @@ export default function HomeScreen({ navigation }) {
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <StatusBar barStyle={theme.isDark ? "light-content" : "dark-content"} />
-      <SafeAreaView style={{ flex: 1 }}>
+      <SafeAreaView edges={["top", "left", "right"]} style={{ flex: 1 }}>
+        <View style={styles.fixedTopArea}>
+          <View style={styles.headerTop}>
+            <View>
+              <Text style={[styles.greeting, { color: theme.colors.textMuted }]}>
+                {getGreeting()}, {user?.name?.split(" ")[0] || "User"} 👋
+              </Text>
+              <Text style={[styles.title, { color: theme.colors.textPrimary }]}>Today</Text>
+            </View>
+            <Pressable 
+              onPress={() => navigation.navigate("Profile")}
+              style={[styles.avatar, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
+            >
+              <Text style={[styles.avatarText, { color: theme.colors.textPrimary }]}>
+                {user?.name?.charAt(0) || "U"}
+              </Text>
+            </Pressable>
+          </View>
+
+          <View style={[styles.quoteCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+            <View
+              style={[
+                styles.quoteIcon,
+                {
+                  backgroundColor: theme.colors.card,
+                  borderColor: theme.colors.border,
+                },
+              ]}
+            >
+              <Ionicons name="sparkles" size={14} color={theme.colors.textSecondary} />
+            </View>
+            <Text style={[styles.quoteText, { color: theme.colors.textPrimary }]}>
+              "{dailyQuote.text}"
+            </Text>
+            <Text style={[styles.quoteAuthor, { color: theme.colors.textMuted }]}>
+              — {dailyQuote.author}
+            </Text>
+          </View>
+
+          <View style={styles.progressMirror}>
+            <View style={styles.progressRow}>
+              <Text style={[styles.progressLabel, { color: theme.colors.textPrimary }]}>
+                Daily Momentum <Text style={{ fontWeight: "900" }}>{summary.todayCompletionRate}%</Text> 🚀
+              </Text>
+              <Text style={[styles.progressSub, { color: theme.colors.textMuted }]}>
+                {summary.completedToday} / {summary.totalHabits}
+              </Text>
+            </View>
+            <View
+              style={[
+                styles.progressTrack,
+                {
+                  backgroundColor: theme.isDark ? "#1f2937" : "#e5e7eb",
+                  borderColor: theme.colors.border,
+                },
+              ]}
+            >
+              <View 
+                style={[
+                  styles.progressBar, 
+                  { 
+                    backgroundColor: theme.colors.accent,
+                    width: `${summary.todayCompletionRate}%`,
+                    minWidth: summary.todayCompletionRate > 0 ? 8 : 0,
+                  }
+                ]} 
+              />
+            </View>
+          </View>
+        </View>
+
         <FlatList
           data={[1]}
           keyExtractor={() => "main"}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[styles.listContent, { paddingBottom: 120 + insets.bottom }]}
+          style={styles.scrollArea}
           ListHeaderComponent={
             <View style={styles.headerArea}>
-              <View style={styles.headerTop}>
-                <View>
-                  <Text style={[styles.greeting, { color: theme.colors.textMuted }]}>
-                    {getGreeting()}, {user?.name?.split(" ")[0] || "User"} 👋
-                  </Text>
-                  <Text style={[styles.title, { color: theme.colors.textPrimary }]}>Today</Text>
-                </View>
-                <Pressable 
-                  onPress={() => navigation.navigate("Profile")}
-                  style={[styles.avatar, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
-                >
-                  <Text style={[styles.avatarText, { color: theme.colors.textPrimary }]}>
-                    {user?.name?.charAt(0) || "U"}
-                  </Text>
-                </Pressable>
-              </View>
-
-              {/* Quote Card - Reintegrated & Redesigned */}
-              <View style={[styles.quoteCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-                <View style={styles.quoteIcon}>
-                  <Ionicons name="sparkles" size={14} color={theme.colors.textSecondary} />
-                </View>
-                <Text style={[styles.quoteText, { color: theme.colors.textPrimary }]}>
-                  "{dailyQuote.text}"
-                </Text>
-                <Text style={[styles.quoteAuthor, { color: theme.colors.textMuted }]}>
-                  — {dailyQuote.author}
-                </Text>
-              </View>
-
-              {/* Progress Mirror */}
-              <View style={styles.progressMirror}>
-                <View style={styles.progressRow}>
-                  <Text style={[styles.progressLabel, { color: theme.colors.textPrimary }]}>
-                    Daily Momentum <Text style={{ fontWeight: "900" }}>{summary.todayCompletionRate}%</Text> 🚀
-                  </Text>
-                  <Text style={[styles.progressSub, { color: theme.colors.textMuted }]}>
-                    {summary.completedToday} / {summary.totalHabits}
-                  </Text>
-                </View>
-                <View style={[styles.progressTrack, { backgroundColor: theme.colors.surface }]}>
-                  <View 
-                    style={[
-                      styles.progressBar, 
-                      { 
-                        backgroundColor: theme.colors.textPrimary, 
-                        width: `${summary.todayCompletionRate}%` 
-                      }
-                    ]} 
-                  />
-                </View>
-              </View>
-
-              {/* Stats Cards - Reintegrated */}
               <View style={styles.statsRow}>
                 <Pressable 
                   onPress={() => navigation.navigate("Milestones")}
@@ -159,7 +171,7 @@ export default function HomeScreen({ navigation }) {
                   <Text style={[styles.statLabel, { color: theme.colors.textMuted }]}>Best Streak 🔥</Text>
                 </Pressable>
                 <Pressable 
-                  onPress={() => navigation.getParent()?.navigate("Week")}
+                  onPress={() => navigation.navigate("Week")}
                   style={[styles.statCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
                 >
                   <Ionicons name="stats-chart" size={18} color="#4d94ff" />
@@ -220,8 +232,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerArea: {
-    paddingTop: 16,
+    paddingTop: 6,
     paddingBottom: 20,
+  },
+  fixedTopArea: {
+    paddingTop: 16,
+  },
+  scrollArea: {
+    flex: 1,
   },
   headerTop: {
     flexDirection: "row",
@@ -264,11 +282,9 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: -10,
     right: 20,
-    backgroundColor: "#fff",
     padding: 5,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#eee",
   },
   quoteText: {
     fontSize: 15,
@@ -307,6 +323,7 @@ const styles = StyleSheet.create({
     height: 10,
     borderRadius: 5,
     overflow: "hidden",
+    borderWidth: 1,
   },
   progressBar: {
     height: "100%",

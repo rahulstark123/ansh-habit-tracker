@@ -63,7 +63,7 @@ export default function HabitDetailCard({ habit, onOpenDetail, onToggle }) {
             style={[styles.mainAction, { backgroundColor: isCompleted ? theme.colors.surface : theme.colors.textPrimary }]}
           >
             <Text style={[styles.mainActionText, { color: isCompleted ? theme.colors.textPrimary : theme.colors.background }]}>
-              {isCompleted ? "Undo" : "Check 🏹"}
+              {isCompleted ? "Completed" : "Complete"}
             </Text>
           </Pressable>
         </View>

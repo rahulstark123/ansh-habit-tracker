@@ -8,7 +8,9 @@ import {
   TextInput,
   Dimensions,
   Platform,
+  Switch,
 } from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useHabits } from "../context/HabitContext";
@@ -21,6 +23,7 @@ const COLORS = ["#6366f1", "#10b981", "#f59e0b", "#ef4444", "#ec4899", "#8b5cf6"
 const ICONS = ["water-outline", "book-outline", "fitness-outline", "musical-notes-outline", "fast-food-outline", "timer-outline", "moon-outline", "sunny-outline"];
 const FREQUENCIES = ["Daily", "Weekly", "Monthly"];
 const TIMES = ["morning", "afternoon", "evening", "all"];
+const REMINDER_REPEAT_OPTIONS = ["daily", "once"];
 
 export default function AddHabitScreen({ navigation }) {
   const theme = useAppTheme();
@@ -34,12 +37,28 @@ export default function AddHabitScreen({ navigation }) {
   const [targetValue, setTargetValue] = useState("1");
   const [targetUnit, setTargetUnit] = useState("times");
   const [timeOfDay, setTimeOfDay] = useState("all");
+  const [reminderEnabled, setReminderEnabled] = useState(false);
+  const [reminderRepeat, setReminderRepeat] = useState("daily");
+  const [showReminderPicker, setShowReminderPicker] = useState(false);
+  const [reminderDate, setReminderDate] = useState(() => {
+    const initial = new Date();
+    initial.setHours(8, 0, 0, 0);
+    return initial;
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isDisabled = title.trim().length === 0;
 
   const handleCreate = async () => {
     if (isDisabled) return;
+
+    let reminderTime = null;
+    if (reminderEnabled) {
+      const hour = reminderDate.getHours();
+      const minute = reminderDate.getMinutes();
+      reminderTime = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+    }
+
     setIsSubmitting(true);
     
     const result = await addHabit({
@@ -51,6 +70,8 @@ export default function AddHabitScreen({ navigation }) {
       targetValue: parseInt(targetValue) || 1,
       targetUnit,
       timeOfDay,
+      reminderTime,
+      reminderRepeat: reminderEnabled ? reminderRepeat : null,
     });
 
     if (result.success) {
@@ -59,6 +80,20 @@ export default function AddHabitScreen({ navigation }) {
     } else {
       alert(result.error || "Failed to create habit");
       setIsSubmitting(false);
+    }
+  };
+
+  const reminderLabel = reminderDate.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  const handleReminderChange = (_, selectedDate) => {
+    if (Platform.OS === "android") {
+      setShowReminderPicker(false);
+    }
+    if (selectedDate) {
+      setReminderDate(selectedDate);
     }
   };
 
@@ -179,6 +214,85 @@ export default function AddHabitScreen({ navigation }) {
                 </TouchableOpacity>
               ))}
             </View>
+          </View>
+
+          <View style={styles.section}>
+            <View style={styles.alarmRow}>
+              <View>
+                <Text style={[styles.sectionLabel, { color: theme.colors.textMuted, marginBottom: 4 }]}>ALARM ⏰</Text>
+                <Text style={[styles.alarmSub, { color: theme.colors.textMuted }]}>Set a daily reminder for this habit</Text>
+              </View>
+              <Switch
+                value={reminderEnabled}
+                onValueChange={(value) => {
+                  selectionHaptic();
+                  setReminderEnabled(value);
+                }}
+                trackColor={{ false: theme.colors.border, true: theme.colors.textPrimary + "55" }}
+                thumbColor={reminderEnabled ? theme.colors.textPrimary : "#f4f3f4"}
+              />
+            </View>
+
+            {reminderEnabled && (
+              <View style={styles.reminderInputRow}>
+                <View style={styles.repeatRow}>
+                  {REMINDER_REPEAT_OPTIONS.map((mode) => (
+                    <TouchableOpacity
+                      key={mode}
+                      onPress={() => {
+                        selectionHaptic();
+                        setReminderRepeat(mode);
+                      }}
+                      style={[
+                        styles.repeatChip,
+                        {
+                          backgroundColor: reminderRepeat === mode ? theme.colors.textPrimary : theme.colors.surface,
+                          borderColor: theme.colors.border,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.repeatChipText,
+                          { color: reminderRepeat === mode ? theme.colors.background : theme.colors.textPrimary },
+                        ]}
+                      >
+                        {mode === "daily" ? "Daily" : "Once"}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                <TouchableOpacity
+                  style={[styles.timePickerButton, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
+                  onPress={() => setShowReminderPicker(true)}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="time-outline" size={18} color={theme.colors.textMuted} />
+                  <Text style={[styles.timePickerText, { color: theme.colors.textPrimary }]}>{reminderLabel}</Text>
+                </TouchableOpacity>
+
+                {showReminderPicker && (
+                  <View style={[styles.inlinePickerWrap, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
+                    <DateTimePicker
+                      value={reminderDate}
+                      mode="time"
+                      is24Hour
+                      display={Platform.OS === "ios" ? "spinner" : "default"}
+                      onChange={handleReminderChange}
+                    />
+                    {Platform.OS === "ios" ? (
+                      <TouchableOpacity
+                        onPress={() => setShowReminderPicker(false)}
+                        style={[styles.pickerDoneBtn, { backgroundColor: theme.colors.textPrimary }]}
+                      >
+                        <Text style={[styles.pickerDoneText, { color: theme.colors.background }]}>Done</Text>
+                      </TouchableOpacity>
+                    ) : null}
+                  </View>
+                )}
+              </View>
+            )}
           </View>
         </ScrollView>
 
@@ -320,5 +434,65 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "800",
     letterSpacing: 0.5,
+  },
+  alarmRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  alarmSub: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  reminderInputRow: {
+    marginTop: 14,
+    gap: 12,
+  },
+  repeatRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  repeatChip: {
+    borderWidth: 1.5,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  repeatChipText: {
+    fontSize: 12,
+    fontWeight: "800",
+  },
+  timePickerButton: {
+    height: 56,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    paddingHorizontal: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  timePickerText: {
+    fontSize: 17,
+    fontWeight: "800",
+  },
+  inlinePickerWrap: {
+    borderRadius: 16,
+    borderWidth: 1.5,
+    paddingTop: 6,
+    paddingBottom: 12,
+    overflow: "hidden",
+  },
+  pickerDoneBtn: {
+    alignSelf: "center",
+    marginTop: 6,
+    paddingHorizontal: 20,
+    height: 40,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  pickerDoneText: {
+    fontSize: 14,
+    fontWeight: "800",
   },
 });

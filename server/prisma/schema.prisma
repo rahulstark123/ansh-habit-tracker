@@ -34,6 +34,7 @@ model Habit {
   targetValue Int?       @default(1)
   targetUnit  String?    @default("times")
   reminderTime String?   // HH:mm format
+  reminderRepeat String? @default("daily") // once, daily
   timeOfDay    String?    @default("all") // morning, afternoon, evening
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt

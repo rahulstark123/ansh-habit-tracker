@@ -116,6 +116,39 @@ router.put("/onboarding", authMiddleware, async (req, res) => {
   }
 });
 
+// PUT /api/auth/profile
+router.put("/profile", authMiddleware, async (req, res) => {
+  const { name, goal, level, focusTime } = req.body;
+  try {
+    const updated = await prisma.user.update({
+      where: { id: req.userId },
+      data: {
+        ...(typeof name === "string" ? { name: name.trim() } : {}),
+        ...(typeof goal === "string" ? { goal } : {}),
+        ...(typeof level === "string" ? { level } : {}),
+        ...(typeof focusTime === "string" ? { focusTime } : {}),
+      },
+    });
+
+    res.json({
+      success: true,
+      user: {
+        id: updated.id,
+        name: updated.name,
+        email: updated.email,
+        onboardingCompleted: updated.onboardingCompleted,
+        goal: updated.goal,
+        level: updated.level,
+        focusTime: updated.focusTime,
+        remindersEnabled: updated.remindersEnabled,
+        createdAt: updated.createdAt,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 // POST /api/auth/signout
 router.post("/signout", authMiddleware, async (req, res) => {
   // Statelenss JWT logout just confirms session end

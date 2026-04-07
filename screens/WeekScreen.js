@@ -58,7 +58,7 @@ export default function WeekScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <SafeAreaView style={{ flex: 1 }}>
+      <SafeAreaView edges={["top", "left", "right"]} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           <Text style={[styles.title, { color: theme.colors.textPrimary }]}>Weekly Focus 🔬</Text>
           <Text style={[styles.subtitle, { color: theme.colors.textMuted }]}>Analysis of your 7-day habit cycle.</Text>

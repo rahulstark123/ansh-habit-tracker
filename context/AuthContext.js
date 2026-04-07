@@ -181,6 +181,29 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const updateProfile = async (profileData) => {
+    try {
+      const token = await safeStorage.getItem("user_token");
+      const response = await fetch(`${API_URL}/auth/profile`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(profileData),
+      });
+      const data = await response.json();
+      if (!response.ok) return { success: false, error: data.error || "Failed to update profile." };
+
+      const updatedUser = { ...user, ...data.user };
+      await safeStorage.setItem("user_data", JSON.stringify(updatedUser));
+      setUser(updatedUser);
+      return { success: true };
+    } catch (e) {
+      return { success: false, error: "Network error. Try again." };
+    }
+  };
+
   return (
     <AuthContext.Provider value={{ 
       isAuthenticated, 
@@ -189,7 +212,8 @@ export const AuthProvider = ({ children }) => {
       signIn, 
       signUp, 
       signOut,
-      completeOnboarding 
+      completeOnboarding,
+      updateProfile
     }}>
       {children}
     </AuthContext.Provider>

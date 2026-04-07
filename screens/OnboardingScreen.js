@@ -15,26 +15,27 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../context/AuthContext";
 import { useAppTheme } from "../theme";
 import { selectionHaptic, impactHaptic } from "../utils/haptics";
+import { FOCUS_TIME_OPTIONS, GOAL_OPTIONS, LEVEL_OPTIONS } from "../utils/profileOptions";
 
 const { width, height } = Dimensions.get("window");
 
-const GOAL_OPTIONS = [
-  { id: "build", label: "Build habits 🔨", icon: "hammer-outline" },
-  { id: "consistent", label: "Stay consistent ♾️", icon: "infinite-outline" },
-  { id: "productivity", label: "Boost productivity ⚡", icon: "flash-outline" },
+const GOAL_WITH_META = [
+  { id: "build", icon: "hammer-outline" },
+  { id: "consistent", icon: "infinite-outline" },
+  { id: "productivity", icon: "flash-outline" },
 ];
 
-const LEVEL_OPTIONS = [
-  { id: "beginner", label: "Beginner 🌱", sub: "I'm just starting out", icon: "seedling-outline" },
-  { id: "intermediate", label: "Intermediate 🌿", sub: "I have some habits", icon: "leaf-outline" },
-  { id: "master", label: "Master 🏆", sub: "I want to optimize", icon: "trophy-outline" },
+const LEVEL_WITH_META = [
+  { id: "beginner", sub: "I'm just starting out", icon: "leaf-outline" },
+  { id: "intermediate", sub: "I have some habits", icon: "leaf-outline" },
+  { id: "master", sub: "I want to optimize", icon: "trophy-outline" },
 ];
 
-const TIME_OPTIONS = [
-  { id: "morning", label: "Morning 🌅", icon: "sunny-outline" },
-  { id: "afternoon", label: "Afternoon ☀️", icon: "partly-sunny-outline" },
-  { id: "evening", label: "Evening 🌕", icon: "moon-outline" },
-  { id: "all", label: "All Day 🕒", icon: "time-outline" },
+const TIME_WITH_META = [
+  { id: "morning", icon: "sunny-outline" },
+  { id: "afternoon", icon: "partly-sunny-outline" },
+  { id: "evening", icon: "moon-outline" },
+  { id: "all", icon: "time-outline" },
 ];
 
 export default function OnboardingScreen() {
@@ -139,32 +140,36 @@ export default function OnboardingScreen() {
               What do you want to achieve? 🎯
             </Text>
             <View style={styles.optionsGrid}>
-              {GOAL_OPTIONS.map((goal) => (
+              {GOAL_WITH_META.map((goalMeta) => {
+                const goal = GOAL_OPTIONS.find((g) => g.id === goalMeta.id);
+                if (!goal) return null;
+                return (
                 <TouchableOpacity
-                  key={goal.id}
+                  key={goalMeta.id}
                   activeOpacity={0.7}
-                  onPress={() => setSelectedGoal(goal.id)}
+                  onPress={() => setSelectedGoal(goalMeta.id)}
                   style={[
                     styles.goalOption,
                     { 
-                      backgroundColor: selectedGoal === goal.id ? theme.colors.textPrimary : theme.colors.surface,
-                      borderColor: selectedGoal === goal.id ? theme.colors.textPrimary : theme.colors.border
+                      backgroundColor: selectedGoal === goalMeta.id ? theme.colors.textPrimary : theme.colors.surface,
+                      borderColor: selectedGoal === goalMeta.id ? theme.colors.textPrimary : theme.colors.border
                     }
                   ]}
                 >
                   <Ionicons 
-                    name={goal.icon} 
+                    name={goalMeta.icon} 
                     size={24} 
-                    color={selectedGoal === goal.id ? theme.colors.background : theme.colors.textPrimary} 
+                    color={selectedGoal === goalMeta.id ? theme.colors.background : theme.colors.textPrimary} 
                   />
                   <Text style={[
                     styles.goalLabel, 
-                    { color: selectedGoal === goal.id ? theme.colors.background : theme.colors.textPrimary }
+                    { color: selectedGoal === goalMeta.id ? theme.colors.background : theme.colors.textPrimary }
                   ]}>
                     {goal.label}
                   </Text>
                 </TouchableOpacity>
-              ))}
+                );
+              })}
             </View>
           </View>
         );
@@ -175,36 +180,40 @@ export default function OnboardingScreen() {
               How experienced are you?
             </Text>
             <View style={styles.optionsGrid}>
-              {LEVEL_OPTIONS.map((item) => (
+              {LEVEL_WITH_META.map((itemMeta) => {
+                const item = LEVEL_OPTIONS.find((l) => l.id === itemMeta.id);
+                if (!item) return null;
+                return (
                 <TouchableOpacity
-                  key={item.id}
+                  key={itemMeta.id}
                   activeOpacity={0.7}
-                  onPress={() => setSelectedLevel(item.id)}
+                  onPress={() => setSelectedLevel(itemMeta.id)}
                   style={[
                     styles.levelOption,
                     { 
-                      backgroundColor: selectedLevel === item.id ? theme.colors.textPrimary : theme.colors.surface,
-                      borderColor: selectedLevel === item.id ? theme.colors.textPrimary : theme.colors.border
+                      backgroundColor: selectedLevel === itemMeta.id ? theme.colors.textPrimary : theme.colors.surface,
+                      borderColor: selectedLevel === itemMeta.id ? theme.colors.textPrimary : theme.colors.border
                     }
                   ]}
                 >
-                  <View style={[styles.iconWrap, { backgroundColor: selectedLevel === item.id ? theme.colors.background + "20" : theme.colors.background }]}>
+                  <View style={[styles.iconWrap, { backgroundColor: selectedLevel === itemMeta.id ? theme.colors.background + "20" : theme.colors.background }]}>
                     <Ionicons 
-                      name={item.icon} 
+                      name={itemMeta.icon} 
                       size={20} 
-                      color={selectedLevel === item.id ? theme.colors.background : theme.colors.textPrimary} 
+                      color={selectedLevel === itemMeta.id ? theme.colors.background : theme.colors.textPrimary} 
                     />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.goalLabel, { color: selectedLevel === item.id ? theme.colors.background : theme.colors.textPrimary }]}>
+                    <Text style={[styles.goalLabel, { color: selectedLevel === itemMeta.id ? theme.colors.background : theme.colors.textPrimary }]}>
                       {item.label}
                     </Text>
-                    <Text style={[styles.goalSub, { color: selectedLevel === item.id ? theme.colors.background + "80" : theme.colors.textMuted }]}>
-                      {item.sub}
+                    <Text style={[styles.goalSub, { color: selectedLevel === itemMeta.id ? theme.colors.background + "80" : theme.colors.textMuted }]}>
+                      {itemMeta.sub}
                     </Text>
                   </View>
                 </TouchableOpacity>
-              ))}
+                );
+              })}
             </View>
           </View>
         );
@@ -215,29 +224,33 @@ export default function OnboardingScreen() {
               When is your focus time?
             </Text>
             <View style={styles.timeGrid}>
-              {TIME_OPTIONS.map((item) => (
+              {TIME_WITH_META.map((itemMeta) => {
+                const item = FOCUS_TIME_OPTIONS.find((t) => t.id === itemMeta.id);
+                if (!item) return null;
+                return (
                 <TouchableOpacity
-                  key={item.id}
+                  key={itemMeta.id}
                   activeOpacity={0.7}
-                  onPress={() => setSelectedTime(item.id)}
+                  onPress={() => setSelectedTime(itemMeta.id)}
                   style={[
                     styles.timeOption,
                     { 
-                      backgroundColor: selectedTime === item.id ? theme.colors.textPrimary : theme.colors.surface,
-                      borderColor: selectedTime === item.id ? theme.colors.textPrimary : theme.colors.border
+                      backgroundColor: selectedTime === itemMeta.id ? theme.colors.textPrimary : theme.colors.surface,
+                      borderColor: selectedTime === itemMeta.id ? theme.colors.textPrimary : theme.colors.border
                     }
                   ]}
                 >
                   <Ionicons 
-                    name={item.icon} 
+                    name={itemMeta.icon} 
                     size={28} 
-                    color={selectedTime === item.id ? theme.colors.background : theme.colors.textPrimary} 
+                    color={selectedTime === itemMeta.id ? theme.colors.background : theme.colors.textPrimary} 
                   />
-                  <Text style={[styles.timeLabel, { color: selectedTime === item.id ? theme.colors.background : theme.colors.textPrimary }]}>
+                  <Text style={[styles.timeLabel, { color: selectedTime === itemMeta.id ? theme.colors.background : theme.colors.textPrimary }]}>
                     {item.label}
                   </Text>
                 </TouchableOpacity>
-              ))}
+                );
+              })}
             </View>
           </View>
         );

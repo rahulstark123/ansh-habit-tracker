@@ -137,7 +137,7 @@ export default function ProfileScreen({ navigation }) {
   }
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView edges={["top", "left", "right"]} style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}
